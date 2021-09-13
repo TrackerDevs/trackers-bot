@@ -1,0 +1,12 @@
+import { SlashCommandBuilder } from "@discordjs/builders"
+import { CommandInteraction } from "discord.js"
+import { Machi } from "../machina"
+
+
+export const _: Machi = {
+    data: (new SlashCommandBuilder()).setDescription(""),
+    execute: async (interaction: CommandInteraction) => {
+
+    },
+    inDev: false 
+}

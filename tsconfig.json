@@ -1,0 +1,18 @@
+{ 
+    "compilerOptions": {
+        "experimentalDecorators": true,
+        "emitDecoratorMetadata": true,
+        "lib": ["ES2015", "ES2016", "ES2017", "ES2018", "ES2019", "ES2020", "DOM"],
+        "target": "ES2017",
+        "moduleResolution": "Node",
+        "module": "CommonJS",
+        "esModuleInterop": true,
+        "skipLibCheck": true,
+        "forceConsistentCasingInFileNames": true,
+        "resolveJsonModule": true
+    }, 
+    "exclude": [
+        "examples",
+        "js"
+    ]
+}
