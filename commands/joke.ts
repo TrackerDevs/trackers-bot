@@ -3,6 +3,7 @@ import { CommandInteraction } from "discord.js"
 import { Machi } from "../lib/machina"
 
 import axios from 'axios'
+import { replyOrFollowup } from "../lib/util"
 
 interface jokeapi {
     "error": boolean,
@@ -32,7 +33,7 @@ export const joke: Machi = {
         let res = await axios.get('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit')
         let data: jokeapi = res.data
 
-        interaction.reply({
+        await interaction[replyOrFollowup(interaction)]({
             content: 
                 data.type == "single" ? `|| ${data.joke} ||` :
                 `${data.setup} \n||${data.delivery}||`, 
