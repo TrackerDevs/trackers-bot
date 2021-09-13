@@ -1,6 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction } from "discord.js"
-import { Machi } from "../machina"
+import { Machi } from "../lib/machina"
 
 
 export const _: Machi = {
