@@ -1,15 +1,15 @@
 {
-  "name": "machina",
+  "name": "project-bot",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "main.ts",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "run": "tsnd --respawn main.ts",
     "getIDS": "tsnd ./lib/getIDs.ts"
   },
-  "author": "Hamziniii",
-  "license": "ISC",
+  "author": "TrackerDevs",
+  "license": "MIT",
   "dependencies": {
     "@discordjs/builders": "^0.6.0",
     "@discordjs/rest": "^0.1.0-canary.0",
