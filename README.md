@@ -15,4 +15,10 @@ We plan to make this bot have a RPG text based game element (subject to change).
 1. Download the repository 
 2. Run `npm install`
 3. Edit / Change any files
-4. Run `npm run start` to start the bot
+4. Run `npm run start` to start the bot <hr>
+## Credits
+### Project Leads
+Leland Moy (AdepT) <br>
+Hamza Gaziuddin (Hamziniii)
+### Contributers 
+...
