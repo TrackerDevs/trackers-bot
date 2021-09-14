@@ -1,5 +1,5 @@
 # Project-Bot
-Discord Bot made by Dev from UIC Tracker Discord<br>
+Discord Bot made by developers in the UIC Tracker Discord<br>
 Uses Typescript (Javascript) and Discord.js<br>
 
 ## What is this discord bot for?
