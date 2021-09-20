@@ -1,11 +1,13 @@
 import 'discord.js'
 import { REST } from '@discordjs/rest'
 import { Routes } from 'discord-api-types/v9'
-import { ButtonInteraction, Client, Collection, CommandInteraction, ContextMenuInteraction, Intents, Interaction, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js'
+import { ApplicationCommand, ApplicationCommandPermissionData, ButtonInteraction, Client, Collection, CommandInteraction, ContextMenuInteraction, Intents, Interaction, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js'
 import * as fs from 'fs'
 import { SlashCommandBuilder } from '@discordjs/builders'
 import { sleep } from './util'
 import path from 'path'
+import * as ts from 'typescript'
+import requireFromString from 'require-from-string'
 
 /** Main class that handles command updates and starting the bot */
 export class Machina {
@@ -14,6 +16,7 @@ export class Machina {
     client: Client & {commands?: Collection<String,Machi>}
     client_id: string 
     guild_id: string
+    loggedIn: boolean 
 
     /**
      * 
@@ -31,20 +34,8 @@ export class Machina {
 
     /** Starts the bot */
     start() {
-        if(!this.client.commands) {
-            this.client.commands = new Collection();
-            for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) {
-                let _command = require(`../commands/${file}`)
-                const name = Object.getOwnPropertyNames(_command)[1]
-                let command: Machi = _command[name]
-                if(!command.inDev && command.data && command.execute) {
-                    if(command.data.name == undefined)
-                        command.data.setName(name)
-                    console.log(command.data.name, "has been added!")
-                    this.client.commands.set(command.data.name, command)
-                }
-            }
-        }
+        if(!this.client.commands)
+            this.reloadCommands()
 
         this.client.once('ready', () => {
             console.log('Bot Online!')
@@ -90,24 +81,52 @@ export class Machina {
             }
         })
 
-        this.client.login(this.token)
+        this.login()
     }
 
-    /** Takes all the files in commands folder, and uploades them to discord (except those with inDev == true)  */
+    /** Logs in the bot ONLY */
+    async login() {
+        if(!this.loggedIn) {
+            await this.client.login(this.token)
+            this.loggedIn = true
+        }
+    }
 
-    async updateCommands() {
+    /** Reloads or Uploads the commands in the bot that are in the commands folder */
+    reloadCommands() {
+        if(this.client.commands)
+            delete this.client.commands
+        console.log(this.client.commands)
         this.client.commands = new Collection();
         for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) {
-            let _command = require(`../commands/${file}`)
-            const name = Object.getOwnPropertyNames(_command)[1]
-            let command: Machi = _command[name]
-            if(!command.inDev && command.data && command.execute) {
-                if(command.data.name == undefined)
-                    command.data.setName(name)
-                console.log(command.data.name, "has been added!")
-                this.client.commands.set(command.data.name, command)
+            try {
+                let _command
+                if(file.includes('.js'))
+                    _command = require(`../commands/${file}`)
+                else if(file.includes('.ts')) {
+                    // FIX UTIL IMPORTS
+                    let fileTemp = ts.transpileModule(fs.readFileSync(path.join(__dirname, `../commands/${file}`)).toString('utf-8'), { compilerOptions: { module: ts.ModuleKind.CommonJS }}).outputText.replace('../lib/', './')
+                    _command = requireFromString(fileTemp)
+                } 
+                console.log("" + Object.values(_command)[0]['execute'], fs.readFileSync(path.join(__dirname, `../commands/${file}`)))
+                const name = Object.getOwnPropertyNames(_command)[1]
+                let command: Machi = _command[name]
+                if(!command.inDev && command.data && command.execute) {
+                    if(command.data.name == undefined)
+                        command.data.setName(name)
+                    console.log(command.data.name, "has been added!")
+                    this.client.commands.set(command.data.name, command)
+                }
+            } catch (error) {
+                console.error(`UH OH, error loading ${file}\n Error: ${error}`)
             }
         }
+    }
+
+    // TODO: Add ability to have commands in subfolders 1 level deep only and error out on naming conflicts
+    /** Takes all the files in commands folder, and uploades them to discord (except those with inDev == true)  */
+    async updateCommands() {
+        this.reloadCommands()
 
         if([...this.client.commands.values()].length < 1)
             return 
@@ -119,14 +138,34 @@ export class Machina {
         await this.rest.put(Routes.applicationGuildCommands(this.client_id, this.guild_id), { body: this.client.commands.mapValues((v) => v.data.toJSON()) })
             .then(() => console.log("Successfully Updated!"))
             .catch(e => console.error("Looks like there was an error!", e))
+
+        await this.login()
+
+        let commandNameAndIdsObject: { [name: string]: ApplicationCommand } = {} // {name: _.name, id: _.id}
+        ;(await this.client.guilds.cache.get(this.guild_id)?.commands.fetch()).toJSON().forEach(_ => commandNameAndIdsObject[_.name] = _)
+        this.client.commands.filter(command => (command?.permissions ?? 0) != 0).toJSON().forEach(_ => commandNameAndIdsObject[_.data.name].permissions.set({permissions: _.permissions}))
+    }
+
+
+    /** Utility function for a command to get itself from an instance of Machina */
+    getCommandSelf(self: Machi) {
+        return this.client?.commands.get(Object.getOwnPropertyNames(self)[1])
     }
 }
 export interface Machi {
     /** This is for adding in the command information */
     data: Partial<SlashCommandBuilder>,
+    /** Any permissions you want to add to the bot */
+    permissions?: ApplicationCommandPermissionData[]    
+    // {
+    //     type: "ROLE" | "USER",
+    //     /** The id of the role or user itself */
+    //     id: string, 
+    //     /** Whether to permit them to use the command. True = allow, false = deny */
+    //     permission: boolean
+    // }[]
     /** The function that should be called when activated */
     execute(interaction: CommandInteraction, bot?: Machina): Promise<void>,
-    // messageComponent?: {
     /** Listen to a button interaction, with the key being name and value being the function to execute */
     button?: {
         [key: string]: (interaction: ButtonInteraction, bot?: Machina) => Promise<void>
@@ -139,7 +178,19 @@ export interface Machi {
     selectMenu?: {
         [key: string]: (interaction: SelectMenuInteraction, bot?: Machina) => Promise<void>
     },
-    // }
-    /** If the command should be sent to discord */
-    inDev: boolean
+    /** If the command data should be sent to discord */
+    inDev: boolean,
+    /** This is if you want to store data on a command during runtime. Useful for keeping data between execute() and an interaction */
+    storage?: {
+        [key: string]: any
+    }
 }
+
+/**
+ * TODO
+ * [x] figure the guild fetch commands
+ * [x] add it so permissions update
+ * [x] test out reload command
+ * [ ] finish poll
+ * [ ] start on new command
+ */ 
