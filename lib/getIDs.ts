@@ -9,7 +9,7 @@ import { Intents } from "discord.js";
 const env = require('dotenv').config({path: path.join(__dirname, "../.env")}).parsed
 
 const bot = new Machina(env['TOKEN'], env['CLIENT_ID'], env['GUILD_ID'], Intents.FLAGS.GUILD_MEMBERS)
-bot.start()
+bot.login()
 bot.client.on('ready', async (client) => {
     const guild = client.guilds.cache.get(env['GUILD_ID'])
     let roles = await guild.roles.fetch()
