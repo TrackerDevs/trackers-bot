@@ -13,21 +13,30 @@ export const poll: Machi = {
                 new MessageSelectMenu()
                     .setCustomId('poll.select')
                     .setPlaceholder('Nothing selected')
-                    .setMinValues(1)
-                    .addOptions(options.map(_ => ({label: _, value: _, description: _}))),
+                    .addOptions(options.map((_, i) => ({label: _, value: _, description: `Option #${i}`}))),
             )        
-        
-        interaction.reply({
-            content: 'test poll!',
+
+        await interaction.reply({
+            content: `Poll by: ${interaction.user.username}\nEnter your responses below!`,
             components: [row]
         })
+
+        bot.client.commands.get('poll',)
+        
+        setTimeout(((i: CommandInteraction) => {
+            i.editReply({
+                content: "Poll has concluded!"
+            })
+        }).bind(null, interaction), 1000 * 10)
     }, 
     selectMenu: {
-        select: async (interaction: SelectMenuInteraction) => {
+        select: async (interaction: SelectMenuInteraction, bot: Machina) => {
+            // bot.client.commands.get('poll')
             interaction[replyOrFollowup(interaction)]({
                 content: `Received: ${interaction.values.join('\n')}`,
                 ephemeral: true
             })
+
         }
     },
 
