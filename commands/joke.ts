@@ -3,7 +3,8 @@ import { CommandInteraction } from "discord.js"
 import { Machi } from "../lib/machina"
 
 import axios from 'axios'
-import { replyOrFollowup } from "../lib/util"
+// import { replyOrFollowup } from "../lib/util"
+const replyOrFollowup = (interaction: CommandInteraction) => interaction?.replied ? 'followUp' : 'reply'
 
 interface jokeapi {
     "error": boolean,

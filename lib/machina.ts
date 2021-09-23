@@ -98,17 +98,22 @@ export class Machina {
             delete this.client.commands
         console.log(this.client.commands)
         this.client.commands = new Collection();
+        // const util = ts.transpileModule(fs.readFileSync(path.join(__dirname, `/lib/util.ts`)).toString('utf-8'), { compilerOptions: { module: ts.ModuleKind.CommonJS }}).outputText.replace('../lib/', './')
         for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) {
-            try {
+            // try {
+                console.log(file)
                 let _command
-                if(file.includes('.js'))
-                    _command = require(`../commands/${file}`)
-                else if(file.includes('.ts')) {
-                    // FIX UTIL IMPORTS
-                    let fileTemp = ts.transpileModule(fs.readFileSync(path.join(__dirname, `../commands/${file}`)).toString('utf-8'), { compilerOptions: { module: ts.ModuleKind.CommonJS }}).outputText.replace('../lib/', './')
-                    _command = requireFromString(fileTemp)
-                } 
-                console.log("" + Object.values(_command)[0]['execute'], fs.readFileSync(path.join(__dirname, `../commands/${file}`)))
+                // if(file.includes('.js'))
+                _command = require(`../commands/${file}`)
+                // else if(file.includes('.ts')) {
+                //     // FIX UTIL IMPORTS
+                                    
+                //     let fileTemp = ts.transpileModule(fs.readFileSync(path.join(__dirname, `../commands/${file}`)).toString('utf-8').replace('util', './lib/util.ts'), { compilerOptions: { module: ts.ModuleKind.CommonJS }}).outputText.replace('../lib/', './')
+                //     console.log(fileTemp)
+                //     _command = requireFromString(fileTemp)
+                    
+                // } 
+                // console.log("" + Object.values(_command)[0]['execute'])
                 const name = Object.getOwnPropertyNames(_command)[1]
                 let command: Machi = _command[name]
                 if(!command.inDev && command.data && command.execute) {
@@ -117,9 +122,9 @@ export class Machina {
                     console.log(command.data.name, "has been added!")
                     this.client.commands.set(command.data.name, command)
                 }
-            } catch (error) {
-                console.error(`UH OH, error loading ${file}\n Error: ${error}`)
-            }
+            // } catch (error) {
+            //     console.error(`UH OH, error loading ${file}\n Error: ${error}`)
+            // }
         }
     }
 

@@ -18,7 +18,7 @@ export const <some name>: Machi = {
 export const test: Machi = {
     data: (new SlashCommandBuilder()).setDescription("testing stuff and such"),
     execute: async (interaction: CommandInteraction) => {
-        interaction.reply("testing!")
+        interaction.reply("testing! + 1 + 2 + 3")
     },
     inDev: false 
 }
