@@ -7,7 +7,7 @@
     "ts_start": "tsnd --respawn main.ts",
     "ts_start_with_blacklist": "tsnd --ignore-watch commands --respawn main.ts",
     "ts_autocompile": "nodemon -e ts  --exec \"tsc\"",
-    "js_run": "node ./js/main.js",
+    "js_start": "node ./js/main.js",
     "getIDS": "tsnd ./lib/getIDs.ts"
   },
   "author": "TrackerDevs",
