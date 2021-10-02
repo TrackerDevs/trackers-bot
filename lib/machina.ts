@@ -90,7 +90,7 @@ export class Machina {
 
     /** Reloads or Uploads the commands in the bot that are in the commands folder */
     reloadCommands() {
-    if(this.client.commands) // Check to see if the command cache exists
+        if(this.client.commands) // Check to see if the command cache exists
             delete this.client.commands // If so, delete it
         this.client.commands = new Collection() // Create a new cache
         for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) { // Get each file from the commands folder
@@ -108,6 +108,7 @@ export class Machina {
                 }
             } catch (error) {
                 console.error(`UH OH, error loading ${file}\n Error: ${error}`) // If there is an error somewhere, log it out 
+            }
         }
     }
 
@@ -178,7 +179,7 @@ export interface Machi {
  * TODO
  * [x] figure the guild fetch commands
  * [x] add it so permissions update
- * [ ] test out reload command
+ * [x] test out reload command
  * [ ] finish poll
  * [ ] start on new command
  */ 
