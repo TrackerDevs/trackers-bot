@@ -4,9 +4,10 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "tsnd --respawn main.ts",
-    "start_with_blacklist": "tsnd --ignore-watch commands --respawn main.ts",
+    "ts_start": "tsnd --respawn main.ts",
+    "ts_start_with_blacklist": "tsnd --ignore-watch commands --respawn main.ts",
+    "ts_autocompile": "nodemon -e ts  --exec \"tsc\"",
+    "js_run": "node ./js/main.js",
     "getIDS": "tsnd ./lib/getIDs.ts"
   },
   "author": "TrackerDevs",
@@ -21,5 +22,8 @@
     "discord.js": "^13.1.0",
     "dotenv": "^10.0.0",
     "typescript": "^4.4.3"
+  },
+  "devDependencies": {
+    "nodemon": "^2.0.13"
   }
 }
