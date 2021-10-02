@@ -21,11 +21,10 @@ We plan to make this bot have a RPG text based game element (subject to change).
 1a. If this is your first time, run `tsc` for initial compilation
 1. Run `npm run ts_autocompile`
 2. Run `npm run js_start`
-3. Any time you want the bot to reload, send the reload command!
-<hr>
+3. Any time you want the bot to reload, send the reload command! <hr>
 ## Credits
 ### Project Leads
 Leland Moy (AdepT) <br>
 Hamza Gaziuddin (Hamziniii)
 ### Contributers 
-...
+TBA
