@@ -90,34 +90,7 @@ export class Machina {
 
     /** Reloads or Uploads the commands in the bot that are in the commands folder */
     reloadCommands() {
-<<<<<<< Updated upstream
-        if(this.client.commands)
-            delete this.client.commands
-        console.log(this.client.commands)
-        this.client.commands = new Collection();
-        for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) {
-            try {
-                let _command
-                if(file.includes('.js'))
-                    _command = require(`../commands/${file}`)
-                else if(file.includes('.ts')) {
-                    // FIX UTIL IMPORTS
-                    let fileTemp = ts.transpileModule(fs.readFileSync(path.join(__dirname, `../commands/${file}`)).toString('utf-8'), { compilerOptions: { module: ts.ModuleKind.CommonJS }}).outputText.replace('../lib/', './')
-                    _command = requireFromString(fileTemp)
-                } 
-                console.log("" + Object.values(_command)[0]['execute'], fs.readFileSync(path.join(__dirname, `../commands/${file}`)))
-                const name = Object.getOwnPropertyNames(_command)[1]
-                let command: Machi = _command[name]
-                if(!command.inDev && command.data && command.execute) {
-                    if(command.data.name == undefined)
-                        command.data.setName(name)
-                    console.log(command.data.name, "has been added!")
-                    this.client.commands.set(command.data.name, command)
-                }
-            } catch (error) {
-                console.error(`UH OH, error loading ${file}\n Error: ${error}`)
-=======
-        if(this.client.commands) // Check to see if the command cache exists
+    if(this.client.commands) // Check to see if the command cache exists
             delete this.client.commands // If so, delete it
         this.client.commands = new Collection() // Create a new cache
         for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) { // Get each file from the commands folder
@@ -135,8 +108,6 @@ export class Machina {
                 }
             } catch (error) {
                 console.error(`UH OH, error loading ${file}\n Error: ${error}`) // If there is an error somewhere, log it out 
->>>>>>> Stashed changes
-            }
         }
     }
 
