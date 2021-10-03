@@ -1,7 +1,6 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from "discord.js"
-import { Machi, Machina } from "../lib/machina"
-import { replyOrFollowup } from "../lib/util"
+import { Machi, MachiUtil, Machina } from "../lib/machina"
 
 
 export const poll: Machi = {
@@ -13,14 +12,14 @@ export const poll: Machi = {
             .setDescription("Set your poll options, separated by a comma").setRequired(true))
         .addStringOption(option => option.setName('description')
             .setDescription('Add a description to your poll').setRequired(false)),
-    execute: async (interaction: CommandInteraction, bot: Machina) => {
+    execute: async (interaction: CommandInteraction, bot: Machina, uuid: string) => {
         const options = interaction.options.getString('options').split(', ').join(',').split(',')
         const row = new MessageActionRow()
             .addComponents(
                 new MessageSelectMenu()
-                    .setCustomId('poll.select')
+                    .setCustomId(MachiUtil.customIdMaker(this, "select", uuid))
                     .setPlaceholder('Nothing selected')
-                    .addOptions(options.map((_, i) => ({label: _, value: _, description: `Option #${i}`}))),
+                    .addOptions(options.map((_, i) => ({label: _, value: _, description: `Option #${i + 1}`}))),
             )        
 
         await interaction.reply({
@@ -31,26 +30,29 @@ export const poll: Machi = {
             })],
             components: [row]
         })
-
-        bot.client.commands.get('poll',)
-        
-        setTimeout(((i: CommandInteraction) => {
-            i.editReply({
+        setTimeout((async (i: CommandInteraction) => {
+            console.log(MachiUtil.getSelf(this, bot).storage)
+            await i.editReply({
                 components: [],
                 embeds: [new MessageEmbed({
                     title: `Poll - ${interaction.options.getString('title')} Concluded!`,
-                    description: interaction.options.getString('description') || "A poll!", 
+                    description: interaction.options.getString('description') || "A poll!",
+                    fields: [{
+                        name: "Results",
+                        value: (Object.entries([...MachiUtil.getStorageInstance(this, bot, uuid).values()].reduce((prev, curr) => [prev, prev[curr] = (prev[curr] || 0 ) + 1][0], {})) as [string, number][]).map(_ => `${_[0]} recieved ${_[1]} ${_[1] == 1 ? "vote" : "votes"}`).join(", "),
+                        inline: true 
+                    }],
                     footer: {text: `Poll started by ${interaction.user.username}`}
                 })]
             })
-        }).bind(null, interaction), 1000 * 10)
+            MachiUtil.deleteStorage(this, bot)
+        }).bind(null, interaction), 1000 * 30)
     }, 
     selectMenu: {
-        select: async (interaction: SelectMenuInteraction, bot: Machina) => {
-            // bot.client.commands.get('poll')
-            // bot.getCommandSelf(this).storage =
-            console.log("potato")
-            interaction[replyOrFollowup(interaction)]({
+        select: async (interaction: SelectMenuInteraction, bot: Machina, uuid: string) => {
+            MachiUtil.getStorageInstance(this, bot, uuid).set(interaction.user.username, interaction.values.join(", "))
+
+            interaction[MachiUtil.replyOrFollowup(interaction)]({
                 content: `Received: ${interaction.values.join('\n')}`,
                 ephemeral: true
             })
