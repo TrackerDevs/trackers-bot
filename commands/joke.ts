@@ -1,11 +1,8 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction } from "discord.js"
-import { Machi } from "../lib/machina"
+import { Machi, MachiUtil } from "../lib/machina"
 
 import axios from 'axios'
-// import { replyOrFollowup } from "../lib/util"
-const replyOrFollowup = (interaction: CommandInteraction) => interaction?.replied ? 'followUp' : 'reply'
-
 interface jokeapi {
     "error": boolean,
     "category": "Programming" | "Misc" | "Dark" | "Pun" | "Spooky" | "Christmas",
@@ -34,7 +31,7 @@ export const joke: Machi = {
         let res = await axios.get('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit')
         let data: jokeapi = res.data
 
-        await interaction[replyOrFollowup(interaction)]({
+        await interaction[MachiUtil.replyOrFollowup(interaction)]({
             content: 
                 data.type == "single" ? `|| ${data.joke} ||` :
                 `${data.setup} \n||${data.delivery}||`, 
