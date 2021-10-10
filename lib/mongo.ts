@@ -3,14 +3,14 @@ import { Document, Schema, model } from "mongoose"
 export interface IUser extends Document {
   id: string,
   birthday?: {
-    month?: number, 
+    month?: string, 
     day?: number, 
     year?: number 
   }
 }
 
 export const BirthdaySchema = new Schema({
-  month: Number,
+  month: String,
   day: Number,
   year: Number,
 })
