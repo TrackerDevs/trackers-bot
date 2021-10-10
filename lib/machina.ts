@@ -4,7 +4,7 @@ import { Routes } from 'discord-api-types/v9'
 import { ApplicationCommand, ApplicationCommandPermissionData, ButtonInteraction, Client, Collection, CommandInteraction, ContextMenuInteraction, Intents, Interaction, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js'
 import fs from 'fs'
 import crypto from 'crypto'
-import { SlashCommandBuilder } from '@discordjs/builders'
+import { SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder } from '@discordjs/builders'
 import { sleep } from './util'
 import path from 'path'
 
@@ -45,7 +45,21 @@ export class Machina {
                 if (!command) return // If not, return 
             
                 try { 
-                    await command.execute(interaction, this, crypto.randomUUID()) // Try to run the command 
+                    if(interaction.options['_group'] && command.subCommandGroups)
+                        if(command.subCommandGroups[interaction.options['_group']])
+                            if(command.subCommandGroups[interaction.options['_group']][interaction.options['_subcommand']])
+                                await command.subCommandGroups[interaction.options['_group']][interaction.options['_subcommand']](interaction, this, crypto.randomUUID())
+                            else 
+                                await command.execute(interaction, this, crypto.randomUUID())
+                        else 
+                            await command.execute(interaction, this, crypto.randomUUID())
+                    else if(interaction.options['_subcommand'] && command.subCommands)
+                        if(await command.subCommands[interaction.options['_subcommand']])
+                            await command.subCommands[interaction.options['_subcommand']](interaction, this, crypto.randomUUID())
+                        else 
+                            await command.execute(interaction, this, crypto.randomUUID()) // Try to run the command 
+                    else 
+                        await command.execute(interaction, this, crypto.randomUUID()) // Try to run the command 
                 } catch (error) {
                     console.error(error) // If there is an error, log it out
                     await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true }) // Reply to the user saying that there was an error
@@ -176,18 +190,27 @@ export class MachiUtil {
 
 export interface Machi {
     /** This is for adding in the command information */
-    data: Partial<SlashCommandBuilder>,
+    data: Partial<SlashCommandBuilder> | Partial<SlashCommandOptionsOnlyBuilder> | Partial<SlashCommandSubcommandsOnlyBuilder>,
     /** Any permissions you want to add to the bot */
     permissions?: ApplicationCommandPermissionData[]    
-    // {
-    //     type: "ROLE" | "USER",
-    //     /** The id of the role or user itself */
-    //     id: string, 
-    //     /** Whether to permit them to use the command. True = allow, false = deny */
-    //     permission: boolean
-    // }[]
-    /** The function that should be called when activated */
+    /** 
+     * @description The function that should be called when activated. 
+     * @see NOTE: If using subcommands/subcommand groups and their corresponding functions are not provided, this will be run. */
     execute(interaction: CommandInteraction, bot?: Machina, uuid?: string): Promise<void>,
+    /**
+     * @description The name of the subcommand (must be the same as provided in Machi.data) mapped to an execute function.
+     * @see NOTE: cannot be used in conjuction with subCommandGroups 
+     * */
+    subCommands?: {
+        [key: string]: Machi["execute"]
+    },
+    /**
+     * @description The name of the subcommand group (must be the same as provided in Machi.data) mapped to an object of subcommands like Machi.subCommands
+     * @see NOTE: cannot be used in conjuction with subCommandG
+     * */
+    subCommandGroups?: {
+        [key: string]: Machi["subCommands"]
+    }
     /** Listen to a button interaction, with the key being name and value being the function to execute */
     button?: {
         [key: string]: (interaction: ButtonInteraction, bot?: Machina, uuid?: string) => Promise<void>
@@ -205,7 +228,7 @@ export interface Machi {
     /** This is if you want to store data on a command during runtime. Useful for keeping data between execute() and an interaction */
     storage?: {
         [key: string]: any
-    }
+    },
 }
 
 /**
