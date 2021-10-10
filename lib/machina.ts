@@ -115,7 +115,7 @@ export class Machina {
         this.client.commands = new Collection() // Create a new cache
         for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) { // Get each file from the commands folder
             try {
-                console.log(file) // Log out the file name
+                // console.log(file) // Log out the file name
                 delete require.cache[require.resolve(`../commands/${file}`)] // Remove the command from the program cache 
                 let _command = require(`../commands/${file}`) // Get the contents from the file 
                 const name = Object.getOwnPropertyNames(_command)[1] // Get the name of the command
