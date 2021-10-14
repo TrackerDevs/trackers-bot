@@ -87,7 +87,7 @@ export const birthday: Machi = {
           })
           .catch(console.error)
       },
-      get: async (interaction: CommandInteraction, bot: Machina) => {
+      get: async (interaction: CommandInteraction, bot: Machina) => { 
         UserModel.findOne({id: interaction.options.getUser('user').id}) 
           .then(v => {
             if(v && v.birthday) {
