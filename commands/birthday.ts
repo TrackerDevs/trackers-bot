@@ -47,10 +47,77 @@ export const birthday: Machi = {
           })
           .catch(console.error)
       },
-      remove: async (interaction: CommandInteraction, bot: Machina) => {},
+      remove: async (interaction: CommandInteraction, bot: Machina) => {
+        // await interaction[MachiUtil.replyOrFollowup(interaction)]("test")
+        UserModel.findOneAndUpdate({
+          id: interaction.user.id // to find
+        }, {
+          $unset: {birthday: 1}
+        })
+          .then(v => {
+            if(v?.birthday) {
+              interaction[MachiUtil.replyOrFollowup(interaction)]({
+                embeds: [{
+                  author: {
+                    name: interaction.user.username,
+                    icon_url: interaction.user.avatarURL()
+                  },
+                  title: "Birthday Removed!", 
+                  description: "Your birthday has been removed!",
+                  fields: [
+                    {name: "Month", value: v.birthday?.month, inline: true},
+                    {name: "Day", value: "" + v.birthday?.day, inline: true},
+                    {name: "Year", value: "" + v.birthday?.year, inline: true}
+                  ]
+                }],
+                ephemeral: true 
+              })
+            } else {
+              interaction[MachiUtil.replyOrFollowup(interaction)]({
+                embeds: [{
+                  author: {
+                    name: interaction.options.getUser('user').username,
+                    icon_url: interaction.options.getUser('user').avatarURL()
+                  },
+                  title: "Not in the Database!",
+                  description: "Your birthday is not in the database, so you cannot remove it!"
+                }]
+              })
+            }
+          })
+          .catch(console.error)
+      },
       get: async (interaction: CommandInteraction, bot: Machina) => {
-        interaction.reply("potato")
-        UserModel.find().exec().then(console.log)
+        UserModel.findOne({id: interaction.options.getUser('user').id})
+          .then(v => {
+            if(v && v.birthday) {
+              interaction[MachiUtil.replyOrFollowup(interaction)]({
+                embeds: [{
+                  author: {
+                    name: interaction.options.getUser('user').username,
+                    icon_url: interaction.options.getUser('user').avatarURL()
+                  },
+                  title: interaction.options.getUser('user').username + "'s Birthday Details!",
+                  fields: [
+                    {name: "Month", value: v.birthday?.month, inline: true},
+                    {name: "Day", value: "" + v.birthday?.day, inline: true},
+                    {name: "Year", value: "" + v.birthday?.year, inline: true}
+                  ]
+                }]
+              })
+            } else {
+              interaction[MachiUtil.replyOrFollowup(interaction)]({
+                embeds: [{
+                  author: {
+                    name: interaction.user.username,
+                    icon_url: interaction.user.avatarURL()
+                  },
+                  title: "Not in the Database!",
+                  description: interaction.options.getUser('user').username + " has not put their birthday into the database!"
+                }]
+              })  
+            }
+          })
       },
     },
     inDev: false 
