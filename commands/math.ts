@@ -3,41 +3,41 @@ import { CommandInteraction } from "discord.js"
 import { Machi } from "../lib/machina"
 
 export const math: Machi = {
-    data: (new SlashCommandBuilder()).setDescription("a totally awesome math command")
-      .addSubcommandGroup(
+    data: (new SlashCommandBuilder()).setDescription("a totally awesome math command") // set the decription of the command
+      .addSubcommandGroup( // create a new subcommand group
         group => group
-          .setName("simple")
-          .setDescription("Simple math operations")
-          .addSubcommand(
-            command => command
-              .setName("add")
-              .setDescription("Add two numbers together")
-              .addNumberOption(
+          .setName("simple") // set the name of the group 
+          .setDescription("Simple math operations") // set the description of the command
+          .addSubcommand( // Add a sub command
+            command => command 
+              .setName("add") // Set the name of the command
+              .setDescription("Add two numbers together") // Set the description of the command
+              .addNumberOption( // Add a number option
                 nOp => nOp
-                  .setName("num1")
-                  .setDescription("The first number")
-                  .setRequired(true)
+                  .setName("num1") // Set the name of the option
+                  .setDescription("The first number") // Set the description of the option
+                  .setRequired(true) // Make the option required
               )
-              .addNumberOption(
+              .addNumberOption( // Add nother number option
                 nOp => nOp
-                  .setName("num2")
-                  .setDescription("The second number")
-                  .setRequired(true)
+                  .setName("num2") // Set the name of the option
+                  .setDescription("The second number") // Set the description of the option
+                  .setRequired(true) // Make the option required
               )
           )
-          .addSubcommand(
+          .addSubcommand( // Add another sub command within the sub command group
             command => command
-              .setName("subtract")
-              .setDescription("Subtract two numbers together")
-              .addNumberOption(
+              .setName("subtract") // Set the name of the command 
+              .setDescription("Subtract two numbers together") // Set the description of the command
+              .addNumberOption( // Add a number option
                 nOp => nOp
-                  .setName("num1")
-                  .setDescription("The first number")
-                  .setRequired(true)
+                  .setName("num1") // Set the name of the option
+                  .setDescription("The first number") // Set the description of the option
+                  .setRequired(true) // Make the option required
               )
-              .addNumberOption(
+              .addNumberOption( // Add a number option
                 nOp => nOp
-                  .setName("num2")
+                  .setName("num2") // Set the 
                   .setDescription("The second number")
                   .setRequired(true)
               )
