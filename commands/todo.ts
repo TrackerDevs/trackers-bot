@@ -6,8 +6,9 @@ export const todo: Machi = {
     data: (new SlashCommandBuilder()).setDescription("The command for all your todo needs!"),
     execute: async (interaction: CommandInteraction) => {
         interaction[MachiUtil.replyOrFollowup(interaction)]({
-            content: "TODO is being implemented! Please be patient :)\n - ProjectBot Devs"
+            content: "TODO is being implemented! Please be patient :)\n - ProjectBot Devs",
+            ephemeral: true
         })
     },
-    inDev: true 
+    inDev: false 
 }
