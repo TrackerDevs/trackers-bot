@@ -4,10 +4,13 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
+    "postinstall": "tsc",
+
     "ts_start": "tsnd --respawn main.ts",
     "ts_start_with_blacklist": "tsnd --ignore-watch commands --respawn main.ts",
     "ts_autocompile": "nodemon -e ts  --exec \"tsc\"",
     "js_start": "node ./js/main.js",
+    "start": "node ./js/main.js",
     "getIDS": "tsnd ./lib/getIDs.ts"
   },
   "author": "TrackerDevs",
@@ -29,5 +32,8 @@
   },
   "devDependencies": {
     "nodemon": "^2.0.13"
+  },
+  "engines": {
+    "node": "16.9.1"
   }
 }
