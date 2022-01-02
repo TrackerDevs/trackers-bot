@@ -1,7 +1,7 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
 import { CommandInteraction } from "discord.js"
 import { Machi, Machina, MachiUtil } from "../lib/machina"
-import { UserModel } from "../lib/mongo"
+import { BirthdayModel } from "../lib/mongo"
 
 export const birthday: Machi = {
     data: (new SlashCommandBuilder()).setDescription("Command for birthday related stuff")
@@ -19,15 +19,15 @@ export const birthday: Machi = {
     },
     subCommands: {
       add: async (interaction: CommandInteraction, bot: Machina) => {
-        UserModel.findOneAndUpdate({
-          id: interaction.user.id
-        }, {
-          birthday: {
+        BirthdayModel.findOneAndUpdate(
+          {id: interaction.user.id}, 
+          {
             month: interaction.options.getString("month"), 
             day: interaction.options.getInteger("day"),
             year: interaction.options.getInteger("year")
-          }
-        }, {upsert: true})
+          }, 
+          {upsert: true}
+        )
           .then(() => {
             interaction[MachiUtil.replyOrFollowup(interaction)]({
               embeds: [{
@@ -49,13 +49,12 @@ export const birthday: Machi = {
       },
       remove: async (interaction: CommandInteraction, bot: Machina) => {
         // await interaction[MachiUtil.replyOrFollowup(interaction)]("test")
-        UserModel.findOneAndUpdate({
-          id: interaction.user.id // to find
-        }, {
-          $unset: {birthday: 1}
-        })
+        BirthdayModel.findOneAndUpdate(
+          {id: interaction.user.id}, 
+          {$unset: {month: 1, day: 1, year: 1}}
+        )
           .then(v => {
-            if(v?.birthday) {
+            if(v?.month) {
               interaction[MachiUtil.replyOrFollowup(interaction)]({
                 embeds: [{
                   author: {
@@ -65,9 +64,9 @@ export const birthday: Machi = {
                   title: "Birthday Removed!", 
                   description: "Your birthday has been removed!",
                   fields: [
-                    {name: "Month", value: v.birthday?.month, inline: true},
-                    {name: "Day", value: "" + v.birthday?.day, inline: true},
-                    {name: "Year", value: "" + v.birthday?.year, inline: true}
+                    {name: "Month", value: v?.month, inline: true},
+                    {name: "Day", value: "" + v?.day, inline: true},
+                    {name: "Year", value: "" + v?.year, inline: true}
                   ]
                 }],
                 ephemeral: true 
@@ -88,9 +87,9 @@ export const birthday: Machi = {
           .catch(console.error)
       },
       get: async (interaction: CommandInteraction, bot: Machina) => {   
-        UserModel.findOne({id: interaction.options.getUser('user').id}) 
+        BirthdayModel.findOne({id: interaction.options.getUser('user').id}) 
           .then(v => {
-            if(v && v.birthday) {
+            if(v && v.month) {
               interaction[MachiUtil.replyOrFollowup(interaction)]({
                 embeds: [{
                   author: {
@@ -99,9 +98,9 @@ export const birthday: Machi = {
                   },
                   title: interaction.options.getUser('user').username + "'s Birthday Details!",
                   fields: [
-                    {name: "Month", value: v.birthday?.month, inline: true},
-                    {name: "Day", value: "" + v.birthday?.day, inline: true},
-                    {name: "Year", value: "" + v.birthday?.year, inline: true}
+                    {name: "Month", value: v?.month, inline: true},
+                    {name: "Day", value: "" + v?.day, inline: true},
+                    {name: "Year", value: "" + v?.year, inline: true}
                   ]
                 }]
               })
