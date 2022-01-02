@@ -4,6 +4,7 @@ import { Machina } from './lib/machina'
 require('dotenv').config() // This is for the token in the .env file 
 
 // Your token, client id of the bot, guild id of where you want the commands to be, and any extra permissions
+console.log("⚠  POSSIBLE ISSUE: GUILD_ID putting in \"\"")
 const bot = new Machina(process.env['TOKEN'], process.env['CLIENT_ID'], process.env['GUILD_ID'], Intents.FLAGS.GUILD_MESSAGES, Intents.FLAGS.GUILD_MESSAGE_REACTIONS)
 
 // This is a self calling function (aka IIFE): it waits for the commands to updates, then starts the bot
