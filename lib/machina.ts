@@ -140,15 +140,21 @@ export class Machina {
         if([...this.client.commands.values()].length < 1) // Check to see if there are any commands in the cache 
             return // If none, return 
 
+        let recieved = (await this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id)) as ApplicationCommand[]).map(c => c.name)
+        let newCommands = this.client.commands.map(v => v.data.name).filter(v => !recieved.includes(v))
+        if(newCommands.length == 0)
+            return 
+
+        console.log("New commands: \n", newCommands.join("\n"))
         console.log(`=======\nUpdating list of commands in five seconds`) // Create a countdown and wait for five seconds. This is because we don't want to spam discord's API so you have time to stop it.
         for await (let k of (new Array(5)).fill(0).map((v, i) => 5 - i))
             await [console.log(`In ${k}...`), sleep(1000)][1]
 
+        await this.login() // Log in. This is neccessary because we need to know specific information about the command to add in permissions to that command 
+
         await this.rest.put(Routes.applicationGuildCommands(this.client_id, this.guild_id), { body: this.client.commands.mapValues((v) => v.data.toJSON()) }) // Sends the command infromation to discord 
             .then(() => console.log("Successfully Updated!"))
             .catch(e => console.error("Looks like there was an error!", e))
-
-        await this.login() // Log in. This is neccessary because we need to know specific information about the command to add in permissions to that command 
 
         try {
             let commandNameAndIdsObject: { [name: string]: ApplicationCommand } = {} // Create an object to hold the data
