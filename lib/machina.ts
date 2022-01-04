@@ -2,8 +2,9 @@ import 'discord.js'
 import { REST } from '@discordjs/rest'
 import { Routes } from 'discord-api-types/v9'
 import { ApplicationCommand, ApplicationCommandPermissionData, ButtonInteraction, Client, Collection, CommandInteraction, ContextMenuInteraction, Intents, Interaction, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js'
-import * as fs from 'fs'
-import { SlashCommandBuilder } from '@discordjs/builders'
+import fs from 'fs'
+import crypto from 'crypto'
+import { SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder } from '@discordjs/builders'
 import { sleep } from './util'
 import path from 'path'
 
@@ -44,35 +45,54 @@ export class Machina {
                 if (!command) return // If not, return 
             
                 try { 
-                    await command.execute(interaction, this) // Try to run the command 
+                    if(interaction.options['_group'] && command.subCommandGroups)
+                        if(command.subCommandGroups[interaction.options['_group']])
+                            if(command.subCommandGroups[interaction.options['_group']][interaction.options['_subcommand']])
+                                await command.subCommandGroups[interaction.options['_group']][interaction.options['_subcommand']](interaction, this, crypto.randomUUID())
+                            else 
+                                await command.execute(interaction, this, crypto.randomUUID())
+                        else 
+                            await command.execute(interaction, this, crypto.randomUUID())
+                    else if(interaction.options['_subcommand'] && command.subCommands)
+                        if(await command.subCommands[interaction.options['_subcommand']])
+                            await command.subCommands[interaction.options['_subcommand']](interaction, this, crypto.randomUUID())
+                        else 
+                            await command.execute(interaction, this, crypto.randomUUID()) // Try to run the command 
+                    else 
+                        await command.execute(interaction, this, crypto.randomUUID()) // Try to run the command 
                 } catch (error) {
                     console.error(error) // If there is an error, log it out
                     await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true }) // Reply to the user saying that there was an error
                 }
             } else if(interaction.isMessageComponent()) { // Check to see if the interaction is a message component
-                let [commandName, interactionName] = interaction.customId.split('.') // Separate the command name and the interaction name
+                let [commandName, interactionName, uuid] = interaction.customId.split('.') // Separate the command name and the interaction name
                 let command
 
                 const error = () => interaction.reply({ content: 'Uh Oh! The devs made a mistake while creating this command.', ephemeral: true})
 
-                if(interaction.isButton()) { // Check to see if its a button action
-                    command = this.client.commands.get(commandName)['button'] // Get button handlers from the command (if there is one that is)
-                    if(command[interactionName]) // If the particular button interaction exists
-                        command[interactionName](interaction, this) // THen run it!
-                    else 
-                        await error() // Else error
-                } else if(interaction.isContextMenu()) { // Check to see if its a context menu action
-                    command = this.client.commands.get(commandName)['contextMenu'] // Get context handlers from the command (if there is one that is)
-                    if(command[interactionName]) // If the particular context menu interaction exists 
-                        command[interactionName](interaction, this) // Then run it!
-                    else 
-                        await error() // Else error
-                } else if(interaction.isSelectMenu()) { // Check to see if its a select menu action
-                    command = this.client.commands.get(commandName)['selectMenu'] // Get select menu handler form the command (if there is one that is)
-                    if(command[interactionName]) // If the particular select menu interaction exists
-                        command[interactionName](interaction, this) // Then run it!
-                    else 
-                        await error() // Else error 
+                try {
+                    if(interaction.isButton()) { // Check to see if its a button action
+                        command = this.client.commands.get(commandName)['button'] // Get button handlers from the command (if there is one that is)
+                        if(command[interactionName]) // If the particular button interaction exists
+                            command[interactionName](interaction, this, uuid) // THen run it!
+                        else 
+                            await error() // Else error
+                    } else if(interaction.isContextMenu()) { // Check to see if its a context menu action
+                        command = this.client.commands.get(commandName)['contextMenu'] // Get context handlers from the command (if there is one that is)
+                        if(command[interactionName]) // If the particular context menu interaction exists 
+                            command[interactionName](interaction, this, uuid) // Then run it!
+                        else 
+                            await error() // Else error
+                    } else if(interaction.isSelectMenu()) { // Check to see if its a select menu action
+                        command = this.client.commands.get(commandName)['selectMenu'] // Get select menu handler form the command (if there is one that is)
+                        if(command[interactionName]) // If the particular select menu interaction exists
+                            command[interactionName](interaction, this, uuid) // Then run it!
+                        else 
+                            await error() // Else error 
+                    }
+                } catch (e) {
+                    console.error(`Error running interaction! ${e}`)
+                    await interaction.reply({ content: 'Uh Oh! Your interaction did not go through!.', ephemeral: true})
                 }
             }
         })
@@ -90,39 +110,12 @@ export class Machina {
 
     /** Reloads or Uploads the commands in the bot that are in the commands folder */
     reloadCommands() {
-<<<<<<< Updated upstream
-        if(this.client.commands)
-            delete this.client.commands
-        console.log(this.client.commands)
-        this.client.commands = new Collection();
-        for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) {
-            try {
-                let _command
-                if(file.includes('.js'))
-                    _command = require(`../commands/${file}`)
-                else if(file.includes('.ts')) {
-                    // FIX UTIL IMPORTS
-                    let fileTemp = ts.transpileModule(fs.readFileSync(path.join(__dirname, `../commands/${file}`)).toString('utf-8'), { compilerOptions: { module: ts.ModuleKind.CommonJS }}).outputText.replace('../lib/', './')
-                    _command = requireFromString(fileTemp)
-                } 
-                console.log("" + Object.values(_command)[0]['execute'], fs.readFileSync(path.join(__dirname, `../commands/${file}`)))
-                const name = Object.getOwnPropertyNames(_command)[1]
-                let command: Machi = _command[name]
-                if(!command.inDev && command.data && command.execute) {
-                    if(command.data.name == undefined)
-                        command.data.setName(name)
-                    console.log(command.data.name, "has been added!")
-                    this.client.commands.set(command.data.name, command)
-                }
-            } catch (error) {
-                console.error(`UH OH, error loading ${file}\n Error: ${error}`)
-=======
         if(this.client.commands) // Check to see if the command cache exists
             delete this.client.commands // If so, delete it
         this.client.commands = new Collection() // Create a new cache
         for (const file of fs.readdirSync(path.join(__dirname, '../commands')).filter(file => file.endsWith('.js') || file.endsWith('.ts'))) { // Get each file from the commands folder
             try {
-                console.log(file) // Log out the file name
+                // console.log(file) // Log out the file name
                 delete require.cache[require.resolve(`../commands/${file}`)] // Remove the command from the program cache 
                 let _command = require(`../commands/${file}`) // Get the contents from the file 
                 const name = Object.getOwnPropertyNames(_command)[1] // Get the name of the command
@@ -135,7 +128,6 @@ export class Machina {
                 }
             } catch (error) {
                 console.error(`UH OH, error loading ${file}\n Error: ${error}`) // If there is an error somewhere, log it out 
->>>>>>> Stashed changes
             }
         }
     }
@@ -148,66 +140,104 @@ export class Machina {
         if([...this.client.commands.values()].length < 1) // Check to see if there are any commands in the cache 
             return // If none, return 
 
+        let recieved = (await this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id)) as ApplicationCommand[]).map(c => c.name)
+        let newCommands = this.client.commands.map(v => v.data.name).filter(v => !recieved.includes(v))
+        if(newCommands.length == 0)
+            return 
+
+        console.log("New commands: \n", newCommands.join("\n"))
         console.log(`=======\nUpdating list of commands in five seconds`) // Create a countdown and wait for five seconds. This is because we don't want to spam discord's API so you have time to stop it.
         for await (let k of (new Array(5)).fill(0).map((v, i) => 5 - i))
             await [console.log(`In ${k}...`), sleep(1000)][1]
+
+        await this.login() // Log in. This is neccessary because we need to know specific information about the command to add in permissions to that command 
 
         await this.rest.put(Routes.applicationGuildCommands(this.client_id, this.guild_id), { body: this.client.commands.mapValues((v) => v.data.toJSON()) }) // Sends the command infromation to discord 
             .then(() => console.log("Successfully Updated!"))
             .catch(e => console.error("Looks like there was an error!", e))
 
-        await this.login() // Log in. This is neccessary because we need to know specific information about the command to add in permissions to that command 
-
-        let commandNameAndIdsObject: { [name: string]: ApplicationCommand } = {} // Create an object to hold the data
-        ;(await this.client.guilds.cache.get(this.guild_id)?.commands.fetch()).toJSON().forEach(_ => commandNameAndIdsObject[_.name] = _) // For each command in the guild, get its data
-        this.client.commands.filter(command => (command?.permissions ?? 0) != 0).toJSON().forEach(_ => commandNameAndIdsObject[_.data.name].permissions.set({permissions: _.permissions})) // For each command in the cache that has permissions, set the corresponding command in the guild its permissions
-    }
-
-
-    /** Utility function for a command to get itself from an instance of Machina */
-    getCommandSelf(self: Machi) {
-        return this.client?.commands.get(Object.getOwnPropertyNames(self)[1])
+        try {
+            let commandNameAndIdsObject: { [name: string]: ApplicationCommand } = {} // Create an object to hold the data
+            ;(await this.client.guilds.cache.get(this.guild_id)?.commands.fetch())?.toJSON()?.forEach(_ => commandNameAndIdsObject[_.name] = _) // For each command in the guild, get its data
+            this.client.commands.filter(command => (command?.permissions ?? 0) != 0)?.toJSON()?.forEach(_ => commandNameAndIdsObject[_.data.name]?.permissions?.set({permissions: _.permissions})) // For each command in the cache that has permissions, set the corresponding command in the guild its permissions
+        } catch (e) {
+            console.error(e);
+        }
     }
 }
+
+export class MachiUtil {
+    static replyOrFollowup(interaction: CommandInteraction | MessageComponentInteraction) {
+        return interaction?.replied ? 'followUp' : 'reply'
+    }
+    static getSelf(self: Machi, bot: Machina) {
+        return bot.client?.commands.get(Object.getOwnPropertyNames(self)[1])
+    }
+    static getStorage(self: Machi, bot: Machina) {
+        if(bot.client?.commands && (bot.client?.commands.get(Object.getOwnPropertyNames(self)[1]).storage == undefined))
+            this.getSelf(self, bot).storage = {}
+        return bot.client?.commands.get(Object.getOwnPropertyNames(self)[1]).storage
+    }
+
+    static deleteStorage(self: Machi, bot: Machina) {
+        delete this.getSelf(self, bot).storage
+    }
+
+    static getStorageInstance(self: Machi, bot: Machina, uuid: string) {
+        this.getStorage(self, bot)
+        if(bot.client?.commands && (this.getStorage(self, bot)[uuid] == undefined))
+            this.getStorage(self, bot)[uuid] = new Map()
+        return this.getStorage(self, bot)[uuid] as Map<string, any>
+    }
+
+    static deleteStorageInstance(self: Machi, bot: Machina, uuid: string) {
+        delete this.getStorage(self, bot)[uuid]
+    }
+    static customIdMaker(self: Machi, interactionName: string, uuid: string) {
+        return `${Object.getOwnPropertyNames(self)[1]}.${interactionName}.${uuid}`
+    }
+}
+
 export interface Machi {
     /** This is for adding in the command information */
-    data: Partial<SlashCommandBuilder>,
+    data: Partial<SlashCommandBuilder> | Partial<SlashCommandOptionsOnlyBuilder> | Partial<SlashCommandSubcommandsOnlyBuilder>,
     /** Any permissions you want to add to the bot */
     permissions?: ApplicationCommandPermissionData[]    
-    // {
-    //     type: "ROLE" | "USER",
-    //     /** The id of the role or user itself */
-    //     id: string, 
-    //     /** Whether to permit them to use the command. True = allow, false = deny */
-    //     permission: boolean
-    // }[]
-    /** The function that should be called when activated */
-    execute(interaction: CommandInteraction, bot?: Machina): Promise<void>,
+    /** 
+     * @description The function that should be called when activated. 
+     * @see NOTE: If using subcommands/subcommand groups and their corresponding functions are not provided, this will be run. */
+    execute(interaction: CommandInteraction, bot?: Machina, uuid?: string): Promise<void>,
+    /**
+     * @description The name of the subcommand (must be the same as provided in Machi.data) mapped to an execute function.
+     * @see NOTE: cannot be used in conjuction with subCommandGroups 
+     * */
+    subCommands?: {
+        [key: string]: Machi["execute"]
+    },
+    /**
+     * @description The name of the subcommand group (must be the same as provided in Machi.data) mapped to an object of subcommands like Machi.subCommands
+     * @see NOTE: cannot be used in conjuction with subCommandG
+     * */
+    subCommandGroups?: {
+        [key: string]: Machi["subCommands"]
+    }
     /** Listen to a button interaction, with the key being name and value being the function to execute */
     button?: {
-        [key: string]: (interaction: ButtonInteraction, bot?: Machina) => Promise<void>
+        [key: string]: (interaction: ButtonInteraction, bot?: Machina, uuid?: string) => Promise<void>
     },
     /** Listen to a context menu interaction, with the key being name and value being the function to execute */
     contextMenu?: {
-        [key: string]: (interaction: ContextMenuInteraction, bot?: Machina) => Promise<void>
+        [key: string]: (interaction: ContextMenuInteraction, bot?: Machina, uuid?: string) => Promise<void>
     },
     /** Listen to a select menu component interaction, with the key being name and value being the function to execute */
     selectMenu?: {
-        [key: string]: (interaction: SelectMenuInteraction, bot?: Machina) => Promise<void>
+        [key: string]: (interaction: SelectMenuInteraction, bot?: Machina, uuid?: string) => Promise<void>
     },
     /** If the command data should be sent to discord */
     inDev: boolean,
     /** This is if you want to store data on a command during runtime. Useful for keeping data between execute() and an interaction */
     storage?: {
         [key: string]: any
-    }
+    },
 }
 
-/**
- * TODO
- * [x] figure the guild fetch commands
- * [x] add it so permissions update
- * [ ] test out reload command
- * [ ] finish poll
- * [ ] start on new command
- */ 

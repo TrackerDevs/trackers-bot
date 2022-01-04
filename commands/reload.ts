@@ -10,6 +10,11 @@ export const reload: Machi = {
             type: "USER",
             id: ids.recieved.members.Hamziniii.id,
             permission: true
+        },
+        {
+            type: "USER",
+            id: ids.recieved.members.AdepT.id,
+            permission: true
         }
     ],
     execute: async (interaction: CommandInteraction, bot: Machina) => {
