@@ -206,7 +206,7 @@ export interface Machi {
     /** 
      * @description The function that should be called when activated. 
      * @see NOTE: If using subcommands/subcommand groups and their corresponding functions are not provided, this will be run. */
-    execute(interaction: CommandInteraction, bot?: Machina, uuid?: string): Promise<void>,
+    execute(interaction: CommandInteraction, bot?: Machina, uuid?: string): Promise<void> | void,
     /**
      * @description The name of the subcommand (must be the same as provided in Machi.data) mapped to an execute function.
      * @see NOTE: cannot be used in conjuction with subCommandGroups 
