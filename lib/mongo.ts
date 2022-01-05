@@ -41,14 +41,17 @@ export const BaseSchema = {
 export interface IBirthday extends IBase {
   month: string, 
   day: number, 
-  year: number 
+  year?: number 
 }
 
 export const BirthdaySchema = new Schema({
   ...BaseSchema,
   month: String, 
   day: Number, 
-  year: Number, 
+  year: {
+    type: Number, 
+    required: false
+  }, 
 })
 
 export const BirthdayModel = model<IBirthday>('Birthday', BirthdaySchema)
