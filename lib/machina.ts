@@ -120,7 +120,7 @@ export class Machina {
                 let _command = require(`../commands/${file}`) // Get the contents from the file 
                 const name = Object.getOwnPropertyNames(_command)[1] // Get the name of the command
                 let command: Machi = _command[name] // Get the actual command from the file
-                if(!command.inDev && command.data && command.execute) { // Check to see if the command should be added (not in dev), if the command has data, and if the command has an execute function
+                if(command.upload > -1 && command.data && command.execute) { // Check to see if the command should be added (not in dev), if the command has data, and if the command has an execute function
                     if(command.data.name == undefined) // If the name is not set
                         command.data.setName(name) // Then set the name 
                     this.client.commands.set(command.data.name, command) // Add the command to the cache
@@ -141,7 +141,7 @@ export class Machina {
             return // If none, return 
 
         let recieved = (await this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id)) as ApplicationCommand[]).map(c => c.name)
-        let newCommands = this.client.commands.map(v => v.data.name).filter(v => !recieved.includes(v))
+        let newCommands = this.client.commands.filter(v => !recieved.includes(v.data.name) || v.upload == 1).map(v => v.data.name)
         if(newCommands.length == 0)
             return 
 
@@ -233,11 +233,15 @@ export interface Machi {
     selectMenu?: {
         [key: string]: (interaction: SelectMenuInteraction, bot?: Machina, uuid?: string) => Promise<void>
     },
-    /** If the command data should be sent to discord */
-    inDev: boolean,
+    /** Whether the command should be uploaded or not. -1: should be removed if exists, 0: upserted, 1: uploaded everytime */
+    upload: -1 | 0 | 1,
     /** This is if you want to store data on a command during runtime. Useful for keeping data between execute() and an interaction */
     storage?: {
         [key: string]: any
     },
+    /** Anything extra you want to add. Useful for functions that you want to reuse but keep in the context of the command*/
+    extra?: {
+        [key: string]: any
+    }
 }
 

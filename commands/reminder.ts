@@ -33,5 +33,5 @@ export const reminder: Machi = {
 
       }
     },
-    inDev: true 
+    upload: 0 
 }

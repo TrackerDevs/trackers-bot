@@ -119,5 +119,5 @@ export const birthday: Machi = {
           })
       },
     },
-    inDev: false 
+    upload: 1
 }

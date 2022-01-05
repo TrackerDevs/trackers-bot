@@ -23,5 +23,5 @@ export const reload: Machi = {
             content: "Commands reloaded!"
         })
     },
-    inDev: false 
+    upload: 0 
 }
