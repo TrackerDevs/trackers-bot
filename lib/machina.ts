@@ -145,7 +145,7 @@ export class Machina {
         if(newCommands.length == 0)
             return 
 
-        console.log("New commands: \n", newCommands.join("\n"))
+        console.log("New commands:\n", newCommands.join("\n"))
         console.log(`=======\nUpdating list of commands in five seconds`) // Create a countdown and wait for five seconds. This is because we don't want to spam discord's API so you have time to stop it.
         for await (let k of (new Array(5)).fill(0).map((v, i) => 5 - i))
             await [console.log(`In ${k}...`), sleep(1000)][1]
