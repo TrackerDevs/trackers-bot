@@ -15,7 +15,7 @@ for (const file of commandFiles) {
 }
 
 console.log(commands, fs.readdirSync(path.join(__dirname)));
-const rest = new REST({ version: '9' }).setToken('ODg2Nzk3MTk3OTMxMzI3NTUw.GKy5Ih.ay0vJ1B7lxl9cdd3a4n0YC9sL4jE5zyjQoaMTs');
+const rest = new REST({ version: '9' }).setToken('');
 
 rest.put(Routes.applicationGuildCommands('886797197931327550', '422108779027496960'), { body: commands })
 	.then(() => console.log('Successfully registered application commands.'))
