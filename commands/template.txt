@@ -8,5 +8,5 @@ export const _: Machi = {
     execute: async (interaction: CommandInteraction) => {
 
     },
-    inDev: false 
+    upload: 1 
 }

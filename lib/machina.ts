@@ -16,6 +16,7 @@ export class Machina {
     client_id: string 
     guild_id: string
     loggedIn: boolean 
+    jail: Map<string, Criminal>
 
     /**
      * Makes an instance of the Machina class
@@ -54,7 +55,7 @@ export class Machina {
                         else 
                             await command.execute(interaction, this, crypto.randomUUID())
                     else if(interaction.options['_subcommand'] && command.subCommands)
-                        if(await command.subCommands[interaction.options['_subcommand']])
+                        if(command.subCommands[interaction.options['_subcommand']])
                             await command.subCommands[interaction.options['_subcommand']](interaction, this, crypto.randomUUID())
                         else 
                             await command.execute(interaction, this, crypto.randomUUID()) // Try to run the command 
@@ -92,7 +93,7 @@ export class Machina {
                     }
                 } catch (e) {
                     console.error(`Error running interaction! ${e}`)
-                    await interaction.reply({ content: 'Uh Oh! Your interaction did not go through!.', ephemeral: true})
+                    await interaction.reply({ content: 'Uh Oh! Your interaction did not go through!', ephemeral: true})
                 }
             }
         })
@@ -135,12 +136,14 @@ export class Machina {
     // TODO: Add ability to have commands in subfolders 1 level deep only and error out on naming conflicts
     /** Takes all the files in commands folder, and uploades them to discord (except those with inDev == true)  */
     async updateCommands() {
+        // return
         this.reloadCommands() // Reloads the commands 
-
         if([...this.client.commands.values()].length < 1) // Check to see if there are any commands in the cache 
             return // If none, return 
 
-        let recieved = (await this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id)) as ApplicationCommand[]).map(c => c.name)
+        
+        let recieved = []
+        //  (await this.rest.get(Routes.applicationGuildCommands('886797197931327550', '422108779027496960')) as ApplicationCommand[]).map(c => c.name)
         let newCommands = this.client.commands.filter(v => !recieved.includes(v.data.name) || v.upload == 1).map(v => v.data.name)
         if(newCommands.length == 0)
             return 
@@ -245,3 +248,17 @@ export interface Machi {
     }
 }
 
+class Criminal {
+    execute: NodeJS.Timeout
+
+    constructor(obj: Object, prop: string, ms: number, jail: Map<string, Criminal>, uuid: string) {
+        this.execute = setTimeout(((obj: Object, prop: string, jail: Map<string, Criminal>, uuid: string) => {
+            delete obj[prop]
+            jail.delete(uuid)
+        }).bind(null, obj, prop, jail, uuid), ms)
+    }
+
+    defer() {
+        this.execute.refresh()
+    }
+}
