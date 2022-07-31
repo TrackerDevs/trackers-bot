@@ -159,13 +159,13 @@ export class Machina {
             .then(() => console.log("Successfully Updated!"))
             .catch(e => console.error("Looks like there was an error!", e))
 
-        try {
-            let commandNameAndIdsObject: { [name: string]: ApplicationCommand } = {} // Create an object to hold the data
-            ;(await this.client.guilds.cache.get(this.guild_id)?.commands.fetch())?.toJSON()?.forEach(_ => commandNameAndIdsObject[_.name] = _) // For each command in the guild, get its data
-            this.client.commands.filter(command => (command?.permissions ?? 0) != 0)?.toJSON()?.forEach(_ => commandNameAndIdsObject[_.data.name]?.permissions?.set({permissions: _.permissions})) // For each command in the cache that has permissions, set the corresponding command in the guild its permissions
-        } catch (e) {
-            console.error(e);
-        }
+        // try {
+        //     let commandNameAndIdsObject: { [name: string]: ApplicationCommand } = {} // Create an object to hold the data
+        //     ;(await this.client.guilds.cache.get(this.guild_id)?.commands.fetch())?.toJSON()?.forEach(_ => commandNameAndIdsObject[_.name] = _) // For each command in the guild, get its data
+        //     this.client.commands.filter(command => (command?.permissions ?? 0) != 0)?.toJSON()?.forEach(_ => commandNameAndIdsObject[_.data.name]?.permissions?.set({permissions: _.permissions})) // For each command in the cache that has permissions, set the corresponding command in the guild its permissions
+        // } catch (e) {
+        //     console.error(e);
+        // }
     }
 }
 
