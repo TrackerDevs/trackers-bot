@@ -10,8 +10,11 @@ export const <some name>: Machi = {
     execture: async (interaction: CommandInteraction) => {
         this is where you put all the command stuff
     }
-    inDev: true or false
-        - This is so you can manually test your command without it being included the discord command list
+    upload: -1 or 0 or 1
+        - -1: This is so you can manually test your command without it being included the discord command list
+        - 0: This command is added to the guilds given if it hasnt been added before
+        - 1: This command is forcefully updated, useful if you need to update the commnad information of a command
+            - Make sure to change it back to 0 once you have updated it however
 }
 */
 
@@ -20,5 +23,5 @@ export const test: Machi = {
     execute: async (interaction: CommandInteraction) => {
         interaction.reply("testing! - 1 + 2 + 3")
     },
-    inDev: false 
+    upload: 0 
 }

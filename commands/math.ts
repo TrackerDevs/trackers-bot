@@ -103,5 +103,5 @@ export const math: Machi = {
         }, 
       }
     },
-    inDev: false 
+    upload: 0 
 }

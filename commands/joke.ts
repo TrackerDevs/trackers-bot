@@ -45,5 +45,5 @@ export const joke: Machi = {
             ephemeral: interaction.options.getBoolean('private') // ephemeral means that the message will only be send to the user who called the command. Remember, private is an option that the user can manually put in. If the user does not put a value for privte, it will resolve to null which is a falsy vale. 
         })
     },
-    inDev: false // This will tell the program to not send the meta data to discord, since you are currently inDev
+    upload: 0 // This will tell the program to not send the meta data to discord, since you are currently inDev
 }

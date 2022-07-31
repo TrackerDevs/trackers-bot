@@ -60,7 +60,7 @@ export const poll: Machi = {
         }
     },
 
-    inDev: false 
+    upload: 0 
 }
 
 /**

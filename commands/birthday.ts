@@ -8,7 +8,7 @@ export const birthday: Machi = {
       .addSubcommand(command => command.setName("add").setDescription("Add/Edit your birthday to the database!")
         .addStringOption(sOp => sOp.setName("month").setDescription("The month you were born in. Ex: February").addChoices([["January", "January"], ["February", "February"], ["March", "March"], ["April", "April"], ["May", "May"], ["June", "June"], ["July", "July"], ["August", "August"], ["September", "September"], ["October", "October"], ["November", "November"], ["December", "December"]]).setRequired(true))
         .addIntegerOption(nOp => nOp.setName("day").setDescription("The day you were born. Ex: 04").setRequired(true))
-        .addIntegerOption(nOp => nOp.setName("year").setDescription("The day you were born. Ex: 2000").setRequired(true)))
+        .addIntegerOption(nOp => nOp.setName("year").setDescription("The day you were born. Ex: 2000").setRequired(false)))
       .addSubcommand(command => command.setName("remove").setDescription("Remove your birthday from the database")
         .addBooleanOption(bOp => bOp.setName("confirm").setDescription("Are you sure you would like to delete your birthday from the database").setRequired(true)))
       .addSubcommand(command => command.setName("get").setDescription("Get the birthday of a user!")
@@ -119,5 +119,5 @@ export const birthday: Machi = {
           })
       },
     },
-    inDev: false 
+    upload: 1
 }
