@@ -1,7 +1,7 @@
 import 'discord.js'
 import { REST } from '@discordjs/rest'
 import { Routes } from 'discord-api-types/v9'
-import { ApplicationCommand, ApplicationCommandPermissionData, ButtonInteraction, Client, Collection, CommandInteraction, ContextMenuInteraction, Intents, Interaction, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js'
+import { ApplicationCommand, ButtonInteraction, ChatInputCommandInteraction, Client, Collection, CommandInteraction, ContextMenuCommandInteraction, GatewayIntentBits, Interaction, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js'
 import fs from 'fs'
 import crypto from 'crypto'
 import { SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder } from '@discordjs/builders'
@@ -29,7 +29,7 @@ export class Machina {
         this.client_id = client_id
         this.guild_id = guild_id
         this.rest = new REST({version: '9'}).setToken(this.token)
-        this.client = new Client({intents: [Intents.FLAGS.GUILDS, ...extraIntenets]})
+        this.client = new Client({intents: [GatewayIntentBits.Guilds, ...extraIntenets]})
     }
 
     /** Starts the bot */
@@ -41,7 +41,7 @@ export class Machina {
             console.log('Bot Online!') // log that the bot is online
         })
         this.client.on('interactionCreate', async interaction => { // Listen to when a user either runs a command, or responds to a command 
-            if (interaction.isCommand()) { // If its a command 
+            if (interaction.isChatInputCommand()) { // If its a command 
                 const command = this.client.commands.get(interaction.commandName) // Check to see if the command they ran corresponds to a command in the cache
                 if (!command) return // If not, return 
             
@@ -78,7 +78,7 @@ export class Machina {
                             command[interactionName](interaction, this, uuid) // THen run it!
                         else 
                             await error() // Else error
-                    } else if(interaction.isContextMenu()) { // Check to see if its a context menu action
+                    } else if(interaction.isContextMenuCommand()) { // Check to see if its a context menu action
                         command = this.client.commands.get(commandName)['contextMenu'] // Get context handlers from the command (if there is one that is)
                         if(command[interactionName]) // If the particular context menu interaction exists 
                             command[interactionName](interaction, this, uuid) // Then run it!
@@ -204,12 +204,11 @@ export class MachiUtil {
 export interface Machi {
     /** This is for adding in the command information */
     data: Partial<SlashCommandBuilder> | Partial<SlashCommandOptionsOnlyBuilder> | Partial<SlashCommandSubcommandsOnlyBuilder>,
-    /** Any permissions you want to add to the bot */
-    permissions?: ApplicationCommandPermissionData[]    
+    /** Any permissions you want to add to the bot */  
     /** 
      * @description The function that should be called when activated. 
      * @see NOTE: If using subcommands/subcommand groups and their corresponding functions are not provided, this will be run. */
-    execute(interaction: CommandInteraction, bot?: Machina, uuid?: string): Promise<void> | void,
+    execute(interaction: ChatInputCommandInteraction, bot?: Machina, uuid?: string): Promise<void> | void,
     /**
      * @description The name of the subcommand (must be the same as provided in Machi.data) mapped to an execute function.
      * @see NOTE: cannot be used in conjuction with subCommandGroups 
@@ -230,7 +229,7 @@ export interface Machi {
     },
     /** Listen to a context menu interaction, with the key being name and value being the function to execute */
     contextMenu?: {
-        [key: string]: (interaction: ContextMenuInteraction, bot?: Machina, uuid?: string) => Promise<void>
+        [key: string]: (interaction: ContextMenuCommandInteraction, bot?: Machina, uuid?: string) => Promise<void>
     },
     /** Listen to a select menu component interaction, with the key being name and value being the function to execute */
     selectMenu?: {

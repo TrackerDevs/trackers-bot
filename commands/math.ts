@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction } from "discord.js"
+import { ChatInputCommandInteraction, CommandInteraction } from "discord.js"
 import { Machi } from "../lib/machina"
 
 export const math: Machi = {
@@ -82,23 +82,23 @@ export const math: Machi = {
               )
           )
       ),
-    execute: async (interaction: CommandInteraction) => {
+    execute: async (interaction: ChatInputCommandInteraction) => {
         interaction.reply("this is a fallback, and should theoretically never run")
     },
     subCommandGroups: {
       simple: {
-        add: async (interaction: CommandInteraction) => {
+        add: async (interaction: ChatInputCommandInteraction) => {
           interaction.reply("The result of the operation is: " + (interaction.options.getNumber("num1") + interaction.options.getNumber("num2")))
         },
-        subtract: async (interaction: CommandInteraction) => {
+        subtract: async (interaction: ChatInputCommandInteraction) => {
           interaction.reply("The result of the operation is: " + (interaction.options.getNumber("num1") - interaction.options.getNumber("num2")))
         } 
       },
       complicated: {
-        multiply: async (interaction: CommandInteraction) => {
+        multiply: async (interaction: ChatInputCommandInteraction) => {
           interaction.reply("The result of the operation is: " + (interaction.options.getNumber("num1") * interaction.options.getNumber("num2")))
         }, 
-        divide: async (interaction: CommandInteraction) => {
+        divide: async (interaction: ChatInputCommandInteraction) => {
           interaction.reply("The result of the operation is: " + (interaction.options.getNumber("num1") / interaction.options.getNumber("num2")))
         }, 
       }

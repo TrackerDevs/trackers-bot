@@ -1,5 +1,5 @@
-import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction, MessageActionRow, MessageEmbed, MessageSelectMenu, SelectMenuInteraction } from "discord.js"
+import { SelectMenuBuilder, ActionRowBuilder, SlashCommandBuilder, EmbedBuilder} from "@discordjs/builders"
+import { CommandInteraction, SelectMenuInteraction, ChatInputCommandInteraction } from "discord.js"
 import { Machi, MachiUtil, Machina } from "../lib/machina"
 
 
@@ -12,18 +12,18 @@ export const poll: Machi = {
             .setDescription("Set your poll options, separated by a comma").setRequired(true))
         .addStringOption(option => option.setName('description')
             .setDescription('Add a description to your poll').setRequired(false)),
-    execute: async (interaction: CommandInteraction, bot: Machina, uuid: string) => {
+    execute: async (interaction: ChatInputCommandInteraction, bot: Machina, uuid: string) => {
         const options = interaction.options.getString('options').split(', ').join(',').split(',')
-        const row = new MessageActionRow()
+        const row = new ActionRowBuilder<SelectMenuBuilder>()
             .addComponents(
-                new MessageSelectMenu()
+                new SelectMenuBuilder()
                     .setCustomId(MachiUtil.customIdMaker(this, "select", uuid))
                     .setPlaceholder('Nothing selected')
                     .addOptions(options.map((_, i) => ({label: _, value: _, description: `Option #${i + 1}`}))),
             )        
 
         await interaction.reply({
-            embeds: [new MessageEmbed({ 
+            embeds: [new EmbedBuilder({ 
                 title: `Polls - ${interaction.options.getString('title')}`,
                 description: interaction.options.getString('description') || "A poll!", 
                 footer: {text: `Poll started by ${interaction.user.username}`}
@@ -34,7 +34,7 @@ export const poll: Machi = {
             console.log(MachiUtil.getSelf(this, bot).storage)
             await i.editReply({
                 components: [],
-                embeds: [new MessageEmbed({
+                embeds: [new EmbedBuilder({
                     title: `Poll - ${interaction.options.getString('title')} Concluded!`,
                     description: interaction.options.getString('description') || "A poll!",
                     fields: [{

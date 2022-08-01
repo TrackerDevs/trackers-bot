@@ -1,5 +1,5 @@
-import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction } from "discord.js"
+import { SlashCommandBuilder, ActionRowBuilder, ButtonBuilder } from "@discordjs/builders"
+import { ButtonInteraction, ButtonStyle, CommandInteraction } from "discord.js"
 import { Machi } from "../lib/machina"
 
 /*
@@ -21,7 +21,20 @@ export const <some name>: Machi = {
 export const test: Machi = {
     data: (new SlashCommandBuilder()).setDescription("testing stuff and such"),
     execute: async (interaction: CommandInteraction) => {
-        interaction.reply("testing! - 1 + 2 + 3")
+		const row = new ActionRowBuilder<ButtonBuilder>()
+			.addComponents(
+				new ButtonBuilder()
+					.setCustomId('primary')
+					.setLabel('Primary')
+					.setStyle(ButtonStyle.Primary),
+			);
+
+		await interaction.reply({ content: 'Pong!', components: [row] });
+    },
+    button: {
+        "testing": async (interaction: ButtonInteraction) => { 
+            interaction.reply("testing! - 1 + 2 + 3")
+        }
     },
     upload: 0 
 }

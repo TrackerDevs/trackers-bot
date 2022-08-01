@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction } from "discord.js"
+import { ChatInputCommandInteraction, CommandInteraction } from "discord.js"
 import { Machi, Machina, MachiUtil } from "../lib/machina"
 
 export const reminder: Machi = {
@@ -19,17 +19,17 @@ export const reminder: Machi = {
           .setName("list")
           .setDescription("List all the reminders that you have currently")
       ),
-    execute: async (interaction: CommandInteraction) => {
+    execute: async (interaction: ChatInputCommandInteraction) => {
       interaction[MachiUtil.replyOrFollowup(interaction)]("oops! something went wrong")
     },
     subCommands: {
-      add: async (interaction: CommandInteraction, bot: Machina, uuid) => {
+      add: async (interaction: ChatInputCommandInteraction, bot: Machina, uuid) => {
 
       },
-      remove: async (interaction: CommandInteraction, bot: Machina, uuid) => {
+      remove: async (interaction: ChatInputCommandInteraction, bot: Machina, uuid) => {
 
       },
-      list: async (interaction: CommandInteraction, bot: Machina, uuid) => {
+      list: async (interaction: ChatInputCommandInteraction, bot: Machina, uuid) => {
 
       }
     },

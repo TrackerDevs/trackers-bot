@@ -5,7 +5,7 @@ import { Machi } from "../lib/machina"
 
 export const _: Machi = {
     data: (new SlashCommandBuilder()).setDescription(""),
-    execute: async (interaction: CommandInteraction) => {
+    execute: async (interaction) => {
 
     },
     upload: 1 

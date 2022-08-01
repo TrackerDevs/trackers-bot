@@ -1,5 +1,5 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { CommandInteraction } from "discord.js"
+import { ChatInputCommandInteraction } from "discord.js"
 import { Machi, MachiUtil } from "../lib/machina"
 
 import axios from 'axios'
@@ -31,7 +31,7 @@ export const joke: Machi = {
             .setDescription('Should this only be sent to you?') // Set the description of the option
             .setRequired(false) // Make it so that this option is not required
         ),
-    execute: async (interaction: CommandInteraction) => { // This is what is to be run when the user calls a command 
+    execute: async (interaction: ChatInputCommandInteraction) => { // This is what is to be run when the user calls a command 
         // let res = await axios.get('https://official-joke-api.appspot.com/random_joke') // This API endpoind is down at writing
         let res = await axios.get('https://v2.jokeapi.dev/joke/Any?blacklistFlags=nsfw,religious,political,racist,sexist,explicit') // use Axios to run an http get requst
         let data: jokeapi = res.data // Get the data from the request
