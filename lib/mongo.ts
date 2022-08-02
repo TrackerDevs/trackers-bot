@@ -1,34 +1,5 @@
 import { Document, Schema, model } from "mongoose"
 
-/*  Commented out due to switching models. We now have a collection 
-export interface IUser extends Document {
-  id: string,
-  birthday?: {
-    month?: string, 
-    day?: number, 
-    year?: number 
-  }
-}
-
-export const BirthdaySchema = new Schema({
-  month: String,
-  day: Number,
-  year: Number,
-})
-
-export const UserSchema: Schema = new Schema(
-  {
-    id: { type: String, required: true },
-    birthday: { type: BirthdaySchema, required: false }
-  },
-  {
-    timestamps: true
-  }
-  )
-  
-  export const UserModel = model<IUser>('User', UserSchema)
-*/
-
 export interface IBase extends Document {
   id: string
 }
@@ -36,6 +7,24 @@ export interface IBase extends Document {
 export const BaseSchema = {
   id: { type: String, required: true }
 }
+export interface IUser extends IBase {
+  netid?: string,
+  verified?: boolean,
+}
+
+export const UserSchema: Schema = new Schema(
+  {
+    ...BaseSchema,
+    netid: { type: String, required: false },
+    verified: { type: Boolean, required: false }
+  },
+  {
+    timestamps: true
+  }
+)
+  
+export const UserModel = model<IUser>('User', UserSchema)
+
 
 //#region Birthday
 export interface IBirthday extends IBase {
