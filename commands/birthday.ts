@@ -20,8 +20,8 @@ export const birthday: Machi = {
     },
     subCommands: {
       add: async (interaction: ChatInputCommandInteraction, bot: Machina) => {
-        if(interaction.options.getInteger("year") > new Date().getFullYear()) {
-          interaction.reply({content: "You are a baby, and thus shouldnt be on discord .______.", ephemeral: true})
+        if(interaction.options.getInteger("year") > new Date().getFullYear() - 15) {
+          interaction.reply({content: interaction.options.getInteger("year") + "? You are a baby, and thus shouldnt be on discord .______.", ephemeral: true})
           return
         } else if (interaction.options.getInteger("year") < 1900) {
           interaction.reply({content: "How are you not dead???", ephemeral: true})
