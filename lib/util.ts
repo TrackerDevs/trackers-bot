@@ -1,3 +1,9 @@
+export const HEX = {
+  RED: 0xE23645,
+  GREEN: 0x51CD66,
+  YELLOW: 0xEDC25E,
+}
+
 /** Returns a promise that waits for (ms) milliseconds before resolving */
 export const sleep = async (ms: number): Promise<void> => new Promise(resolve => setTimeout(resolve, ms))
 
