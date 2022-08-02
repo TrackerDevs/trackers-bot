@@ -1,12 +1,14 @@
 import 'discord.js'
 import { REST } from '@discordjs/rest'
 import { Routes } from 'discord-api-types/v9'
-import { ApplicationCommand, ButtonInteraction, ChatInputCommandInteraction, Client, Collection, CommandInteraction, ContextMenuCommandInteraction, GatewayIntentBits, Interaction, MessageComponentInteraction, SelectMenuInteraction } from 'discord.js'
+import { ApplicationCommand, ButtonInteraction, ChatInputCommandInteraction, Client, Collection, CommandInteraction, ContextMenuCommandInteraction, GatewayIntentBits, Interaction, InteractionType, MessageComponentInteraction, ModalSubmitInteraction, SelectMenuInteraction } from 'discord.js'
 import fs from 'fs'
 import crypto from 'crypto'
 import { SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder } from '@discordjs/builders'
-import { sleep } from './util'
+import { noop, sleep } from './util'
 import path from 'path'
+import { createTransport, Transporter } from 'nodemailer'
+import { diffString, diff } from 'json-diff';
 
 /** Main class that handles command updates and starting the bot */
 export class Machina {
@@ -17,6 +19,7 @@ export class Machina {
     guild_id: string
     loggedIn: boolean 
     jail: Map<string, Criminal>
+    mailer?: Transporter
 
     /**
      * Makes an instance of the Machina class
@@ -24,12 +27,23 @@ export class Machina {
      * @param client_id ID of the bot
      * @param guild_id The SINGLE guild you want your commands to go under
      */
-    constructor(TOKEN: string, client_id: string, guild_id: string, ...extraIntenets: number[]) {
+    constructor(TOKEN: string, client_id: string, guild_id: string, mail_user?: string, mail_pass?: string, extraIntenets: number[] = []) {
         this.token = TOKEN;
         this.client_id = client_id
         this.guild_id = guild_id
         this.rest = new REST({version: '9'}).setToken(this.token)
         this.client = new Client({intents: [GatewayIntentBits.Guilds, ...extraIntenets]})
+
+        if(mail_user && mail_pass)
+            this.mailer = createTransport({
+                host: 'smtp.gmail.com',
+                port: 465,
+                secure: true,
+                auth: {
+                    user: mail_user,
+                    pass: mail_pass
+                }
+            }) 
     }
 
     /** Starts the bot */
@@ -41,10 +55,11 @@ export class Machina {
             console.log('Bot Online!') // log that the bot is online
         })
         this.client.on('interactionCreate', async interaction => { // Listen to when a user either runs a command, or responds to a command 
+            const error = (e?) => interaction.isRepliable() ? interaction.reply({ content: `Uh Oh! The devs made a mistake while creating this command.${e ? 'Some extra info: ' + e : ''}`, ephemeral: true}) : noop()
+            
             if (interaction.isChatInputCommand()) { // If its a command 
                 const command = this.client.commands.get(interaction.commandName) // Check to see if the command they ran corresponds to a command in the cache
                 if (!command) return // If not, return 
-            
                 try { 
                     if(interaction.options['_group'] && command.subCommandGroups)
                         if(command.subCommandGroups[interaction.options['_group']])
@@ -65,11 +80,22 @@ export class Machina {
                     console.error(error) // If there is an error, log it out
                     await interaction.reply({ content: 'There was an error while executing this command!', ephemeral: true }) // Reply to the user saying that there was an error
                 }
+            } else if (interaction.isModalSubmit()) {
+                let [commandName, interactionName, uuid] = interaction.customId.split('.') // Separate the command name and the interaction name
+                let command = this.client.commands.get(commandName)['modalSubmit'] // Get select menu handler form the command (if there is one that is)
+                
+                if(command[interactionName]) // If the particular select menu interaction exists
+                    try {
+                        command[interactionName](interaction, this, uuid) // Then run it!
+                    } catch (error) {
+                        console.error(error) // If there is an error, log it out
+                        error(error)
+                    }
+                else 
+                    await error() // Else error 
             } else if(interaction.isMessageComponent()) { // Check to see if the interaction is a message component
                 let [commandName, interactionName, uuid] = interaction.customId.split('.') // Separate the command name and the interaction name
                 let command
-
-                const error = () => interaction.reply({ content: 'Uh Oh! The devs made a mistake while creating this command.', ephemeral: true})
 
                 try {
                     if(interaction.isButton()) { // Check to see if its a button action
@@ -92,7 +118,7 @@ export class Machina {
                             await error() // Else error 
                     }
                 } catch (e) {
-                    console.error(`Error running interaction! ${e}`)
+                    console.error(`Error running interaction! ${e}`, commandName, interactionName, uuid, interaction.customId)
                     await interaction.reply({ content: 'Uh Oh! Your interaction did not go through!', ephemeral: true})
                 }
             }
@@ -142,8 +168,10 @@ export class Machina {
             return // If none, return 
 
         
-        let recieved = []
-        //  (await this.rest.get(Routes.applicationGuildCommands('886797197931327550', '422108779027496960')) as ApplicationCommand[]).map(c => c.name)
+        let _recieved = 
+         (await this.rest.get(Routes.applicationGuildCommands(this.client_id, this.guild_id)) as ApplicationCommand[])
+        // console.log(diff(_recieved[8].options[0], this.client.commands.get(_recieved[8].name).data['options'][0])) // TODO, add diff checking between commands
+        let recieved = _recieved.map(c => c.name) // Get the names of the commands that are in the discord server
         let newCommands = this.client.commands.filter(v => !recieved.includes(v.data.name) || v.upload == 1).map(v => v.data.name)
         if(newCommands.length == 0)
             return 
@@ -193,6 +221,12 @@ export class MachiUtil {
         return this.getStorage(self, bot)[uuid] as Map<string, any>
     }
 
+    static addStorageItem(self: Machi, bot: Machina, uuid: string, key: string, val: any, lifetime: number = 1000 * 60) {
+        const _ = this.getStorageInstance(self, bot, uuid)
+        _.set(key, val)
+        sleep(lifetime).then(() => _.delete(key))
+    }
+
     static deleteStorageInstance(self: Machi, bot: Machina, uuid: string) {
         delete this.getStorage(self, bot)[uuid]
     }
@@ -234,6 +268,10 @@ export interface Machi {
     /** Listen to a select menu component interaction, with the key being name and value being the function to execute */
     selectMenu?: {
         [key: string]: (interaction: SelectMenuInteraction, bot?: Machina, uuid?: string) => Promise<void>
+    },
+    /** Listen to a modal submit interaction, with the key being name and value being the function to execute */
+    modalSubmit?: {
+        [key: string]: (interaction: ModalSubmitInteraction, bot?: Machina, uuid?: string) => Promise<void>
     },
     /** Whether the command should be uploaded or not. -1: should be removed if exists, 0: upserted, 1: uploaded everytime */
     upload: -1 | 0 | 1,
