@@ -1,3 +1,4 @@
+/** Essentially an enum of color strings */
 export const HEX = {
   RED: 0xE23645,
   GREEN: 0x51CD66,
