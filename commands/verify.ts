@@ -5,7 +5,13 @@ import { UserModel } from "../lib/mongo"
 import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js"
 import { HEX, sleep } from "../lib/util"
 
-const waitTime = 1000 * 60 * 5
+const waitTime = 1000 * 60 * 5 // How much time to wait before a code expires 
+
+/**
+ * Checks the database to see if the user already is verified, and notifies them as such. 
+ * @param interaction The interaction object
+ * @returns bool Whether or not the user is verified
+ */
 const alreadyVerified = async (interaction: ChatInputCommandInteraction) => {
   const user = await UserModel.findOne({id: interaction.user.id})
 
@@ -28,8 +34,37 @@ const alreadyVerified = async (interaction: ChatInputCommandInteraction) => {
   return false
 }
 
+/**
+ * Checks the database to see if the NetID is already associated with another user. 
+ * @param netid The netid of the user
+ * @returns bool Whether or not there is another user with the same NetID
+ */
+const otherPerson = async (interaction: ChatInputCommandInteraction) => {
+  let netid = interaction.options.getString("netid")
+  const user = await UserModel.findOne({netid})
+  
+  if(user && user.verified) {
+    await interaction.reply({
+      embeds: [{
+        author: {
+          name: interaction.user.username,
+          icon_url: interaction.user.avatarURL()
+        },
+        title: `${netid} is in use!`,
+        description: "You can't use someone else's NetID for verification! 🤔",
+        color: HEX.RED
+      }], 
+      ephemeral: true
+    })
+
+    return true
+  }
+  return false
+}
+
 export const verify: Machi = {
-    data: (new SlashCommandBuilder()).setDescription("Verify your discord account with your UIC NetID!")
+    data: (new SlashCommandBuilder())
+    .setDescription("Verify your discord account with your UIC NetID!")
     .addStringOption(sOp => sOp.setName("netid").setDescription("Your UIC NetID").setRequired(true))
     // .addSubcommand(
     //   c => c
@@ -56,20 +91,23 @@ export const verify: Machi = {
     //     )
     // )
     ,
-    execute: async (interaction, bot, uuid) => {
-      if(!bot.mailer) {
+    execute: async (interaction, bot) => {
+      if(!bot.mailer) { // Check to see if the mailer is in service
         interaction.reply({content: 'Error: Email service not in use, check back later!', ephemeral: true})
         return
       }
 
-      if(await alreadyVerified(interaction)) 
+      // Check to see if the user is already verified
+      // Check to see if there is another user with the same netid
+      if(await alreadyVerified(interaction) || await otherPerson(interaction)) 
         return
 
-      const netid = interaction.options.getString("netid")
-      const rand = crypto.randomBytes(10).toString('hex')
+      const netid = interaction.options.getString("netid") // Get the netid from the options
+      const rand = crypto.randomBytes(3).toString('hex') // Generate a random code    
 
-      MachiUtil.addStorageItem(this, bot, "codes", interaction.user.id, rand, waitTime)
+      MachiUtil.addStorageItem(this, bot, "codes", interaction.user.id, rand, waitTime) // Add the code to the storage for later use
 
+      // Send a message to the user saying to check their email 
       await interaction.reply({
         embeds: [{
           author: {
@@ -83,6 +121,7 @@ export const verify: Machi = {
         ephemeral: true
       })
       
+      // Attempt to send the email
       try {
         await bot.mailer.sendMail({
             from: '"Project Bot" <projectbotuic@gmail.com>',
@@ -95,6 +134,7 @@ export const verify: Machi = {
         return
       }
 
+      // Create the button to open modal
       const row = new ActionRowBuilder<ButtonBuilder>()
         .addComponents(
           new ButtonBuilder()
@@ -103,6 +143,7 @@ export const verify: Machi = {
             .setStyle(ButtonStyle.Success),
         );
 
+      // Edit reply to show button and ask user to click button
       await interaction.editReply({
         embeds: [{
           author: {
@@ -116,10 +157,13 @@ export const verify: Machi = {
         components: [row]
       })
 
+      // Save the interaction for later use 
       MachiUtil.addStorageItem(this, bot, "interactions", interaction.user.id, {interaction, netid}, waitTime)
 
+      // Wait for waitTime amount of time to pass
       await sleep(waitTime)
 
+      // Say that the code has expried and remove the button
       await interaction.editReply({
         embeds: [{
           author: {
@@ -133,7 +177,7 @@ export const verify: Machi = {
         components: [] 
       })
     },
-    subCommands: {
+    subCommands: { // Below are the subcommands for the verify command, which is the verification v1 of the command
         getcode: async (interaction, bot) => {
             if(!bot.mailer) {
               interaction.reply({content: 'Error: Email service not in use, check back later!', ephemeral: true})
@@ -224,7 +268,7 @@ export const verify: Machi = {
                     icon_url: interaction.user.avatarURL()
                   },
                   title: "Account Verified!",
-                  description: "Your account is now verified! You can now use commands limited for UIC studnets only!",
+                  description: "Your account is now verified! You can now use commands limited for UIC students only!",
                   color: HEX.GREEN
                 }], 
                 ephemeral: true
@@ -261,28 +305,35 @@ export const verify: Machi = {
         }
     },
     button: {
+      // This is what happens when the user clicks the button 
       "openModal": async (interaction, bot, uuid) => {
-            const modal = new ModalBuilder()
-                .setCustomId(MachiUtil.customIdMaker(this, "submit", uuid))
-                .setTitle('Verification!');
+        // Create a new modal 
+        const modal = new ModalBuilder()
+            .setCustomId(MachiUtil.customIdMaker(this, "submit", uuid))
+            .setTitle('Verification!');
 
-            modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(
-              new TextInputBuilder()
-                .setCustomId('code')
-                .setLabel("Enter Verification Code Here:")
-                .setStyle(TextInputStyle.Short)
-            ))
+        // Add to the modal a field for the netid
+        modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId('code')
+            .setLabel("Enter Verification Code Here:")
+            .setStyle(TextInputStyle.Short)
+        ))
 
-            await interaction.showModal(modal)
+        // Show the modal 
+        await interaction.showModal(modal)
       }
     },
     modalSubmit: {
+      // What happens when the user submits the modal 
       "submit": async (interaction, bot, uuid) => {
-        const code = interaction.fields.getTextInputValue("code")
-        const realCode = MachiUtil.getStorageInstance(this, bot, "codes").get(uuid)
-        const netid = MachiUtil.getStorageInstance(this, bot, "interactions").get(uuid).netid as string
+        // Extract info from the interaction 
+        const code = interaction.fields.getTextInputValue("code") // Get the code from the modal
+        const realCode = MachiUtil.getStorageInstance(this, bot, "codes").get(uuid) // Get the real code from the storage
+        const netid = MachiUtil.getStorageInstance(this, bot, "interactions").get(uuid).netid as string // Get the netid from the storage
 
-        if(realCode == code.trim()) {
+        if(realCode == code.trim()) { // If the code is correct
+          // Add/Update the user in the database
           await UserModel.findOneAndUpdate(
             {id: interaction.user.id}, 
             {
@@ -291,7 +342,8 @@ export const verify: Machi = {
             }, 
             {upsert: true}
           )
-
+          
+          // Respond with success message 
           interaction.reply({
             embeds: [{
               author: {
@@ -303,24 +355,29 @@ export const verify: Machi = {
               color: HEX.GREEN
             }], 
             ephemeral: true
-          }).then(() => (MachiUtil.getStorageInstance(this, bot, "interactions").get(uuid).interaction as ChatInputCommandInteraction<CacheType>).editReply({components: []}))
-
+          })
+            .then(
+              // Remove button to open modal 
+              () => (MachiUtil.getStorageInstance(this, bot, "interactions").get(uuid).interaction as ChatInputCommandInteraction<CacheType>).editReply({components: []})
+            )
+          
+          // Delete the UUID from storage 
           MachiUtil.getStorageInstance(this, bot, "codes").delete(uuid)
         } else {
-          if(realCode == undefined) 
+          if(realCode == undefined) // If the code has expired
             interaction.reply({
               embeds: [{
                 author: {
                   name: interaction.user.username,
                   icon_url: interaction.user.avatarURL()
                 },
-                title: "Code Invalid!",
+                title: "Code Expired!",
                 description: "You waited too long! Please retry",
                 color: HEX.RED
               }], 
               ephemeral: true
             })
-          else 
+          else // If the inputted code was wrong 
             interaction.reply({
               embeds: [{
                 author: {
