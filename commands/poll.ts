@@ -31,7 +31,6 @@ export const poll: Machi = {
             components: [row]
         })
         setTimeout((async (i: CommandInteraction) => {
-            console.log(MachiUtil.getSelf(this, bot).storage)
             await i.editReply({
                 components: [],
                 embeds: [new EmbedBuilder({

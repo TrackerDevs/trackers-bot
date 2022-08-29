@@ -8,7 +8,6 @@ import { SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcom
 import { noop, sleep } from './util'
 import path from 'path'
 import { createTransport, Transporter } from 'nodemailer'
-import { diffString, diff } from 'json-diff';
 
 /** Main class that handles command updates and starting the bot */
 export class Machina {
@@ -19,6 +18,7 @@ export class Machina {
     guild_id: string
     loggedIn: boolean 
     jail: Map<string, Criminal>
+    storage: Map<string, any> = new Map()
     mailer?: Transporter
 
     /**
@@ -55,8 +55,8 @@ export class Machina {
             console.log('Bot Online!') // log that the bot is online
         })
         this.client.on('interactionCreate', async interaction => { // Listen to when a user either runs a command, or responds to a command 
-            const error = (e?) => interaction.isRepliable() ? interaction.reply({ content: `Uh Oh! The devs made a mistake while creating this command.${e ? 'Some extra info: ' + e : ''}`, ephemeral: true}) : noop()
-            
+            const error = (e?) => interaction.isRepliable() ? [interaction.reply({ content: `Uh Oh! The devs made a mistake while creating this command.${e ? 'Some extra info: ' + e : ''}`, ephemeral: true}), console.error(e)] : noop()
+             
             if (interaction.isChatInputCommand()) { // If its a command 
                 const command = this.client.commands.get(interaction.commandName) // Check to see if the command they ran corresponds to a command in the cache
                 if (!command) return // If not, return 
@@ -205,18 +205,21 @@ export class MachiUtil {
         return bot.client?.commands.get(Object.getOwnPropertyNames(self)[1])
     }
     static getStorage(self: Machi, bot: Machina) {
-        if(bot.client?.commands && (bot.client?.commands.get(Object.getOwnPropertyNames(self)[1]).storage == undefined))
-            this.getSelf(self, bot).storage = {}
-        return bot.client?.commands.get(Object.getOwnPropertyNames(self)[1]).storage
+        if(bot.storage && !bot.storage.has(Object.getOwnPropertyNames(self)[1]))
+            bot.storage.set(Object.getOwnPropertyNames(self)[1], {})
+        return bot.storage.get(Object.getOwnPropertyNames(self)[1])
     }
 
     static deleteStorage(self: Machi, bot: Machina) {
-        delete this.getSelf(self, bot).storage
+        bot.storage.delete(Object.getOwnPropertyNames(self)[1])
     }
 
+    static storageInstanceExists(self: Machi, bot: Machina, uuid: string) {
+        return this.getStorage(self, bot)[uuid] != undefined
+    }
     static getStorageInstance(self: Machi, bot: Machina, uuid: string) {
-        this.getStorage(self, bot)
-        if(bot.client?.commands && (this.getStorage(self, bot)[uuid] == undefined))
+        this.getStorage(self, bot)  
+        if(bot.client?.commands && !this.storageInstanceExists(self, bot, uuid))
             this.getStorage(self, bot)[uuid] = new Map()
         return this.getStorage(self, bot)[uuid] as Map<string, any>
     }
@@ -227,6 +230,10 @@ export class MachiUtil {
         sleep(lifetime).then(() => _.delete(key))
     }
 
+    static getStorageItem(self: Machi, bot: Machina, uuid: string, key: string) {
+        const _ = this?.getStorageInstance(self, bot, uuid)
+        return _?.get(key);
+    }
     static deleteStorageInstance(self: Machi, bot: Machina, uuid: string) {
         delete this.getStorage(self, bot)[uuid]
     }
@@ -262,7 +269,7 @@ export interface Machi {
         [key: string]: (interaction: ButtonInteraction, bot?: Machina, uuid?: string) => Promise<void>
     },
     /** Listen to a context menu interaction, with the key being name and value being the function to execute */
-    contextMenu?: {
+    contextMenu?: { 
         [key: string]: (interaction: ContextMenuCommandInteraction, bot?: Machina, uuid?: string) => Promise<void>
     },
     /** Listen to a select menu component interaction, with the key being name and value being the function to execute */

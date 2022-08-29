@@ -17,6 +17,7 @@
   "dependencies": {
     "@discordjs/builders": "^1.1.0",
     "@discordjs/rest": "^1.0.1",
+    "@types/luxon": "^3.0.0",
     "@types/mongodb": "^4.0.7",
     "@types/mongoose": "^5.11.97",
     "@types/node": "^16.7.10",
@@ -27,6 +28,7 @@
     "discord.js": "^14.1.2",
     "dotenv": "^10.0.0",
     "json-diff": "^0.9.0",
+    "luxon": "^3.0.1",
     "mongodb": "^4.1.2",
     "mongoose": "^6.0.9",
     "nodemailer": "^6.7.7",

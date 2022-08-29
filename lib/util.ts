@@ -3,6 +3,7 @@ export const HEX = {
   RED: 0xE23645,
   GREEN: 0x51CD66,
   YELLOW: 0xEDC25E,
+  BLURPLE: 0x384099,
 }
 
 /** Returns a promise that waits for (ms) milliseconds before resolving */
@@ -16,3 +17,10 @@ export const arrify = <T>(item: T) => item instanceof Array ? item : [item]
 
 /** NoOp as in No Operation */
 export const noop = () => {}
+
+export type AddParameters<
+  TFunction extends (...args: any) => any,
+  TParameters extends [...args: any]
+> = (
+  ...args: [...Parameters<TFunction>, ...TParameters]
+) => ReturnType<TFunction>
