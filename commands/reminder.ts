@@ -3,7 +3,7 @@ import { ChatInputCommandInteraction, CommandInteraction } from "discord.js"
 import { Machi, Machina, MachiUtil } from "../lib/machina"
 
 export const reminder: Machi = {
-    data: (new SlashCommandBuilder()).setDescription("Reminders via discord!")
+    data: (new SlashCommandBuilder()).setDescription("Reminder")
       .addSubcommand(
         command => command  
           .setName("add")

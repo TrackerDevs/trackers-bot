@@ -1,9 +1,10 @@
 import { SlashCommandBuilder } from "@discordjs/builders"
-import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChannelType, ChatInputCommandInteraction, EmbedBuilder, GuildMember, Interaction, Message, PermissionFlagsBits, PermissionsBitField, VoiceChannel } from "discord.js"
+import { ActionRowBuilder, ButtonBuilder, ButtonInteraction, ButtonStyle, CacheType, ChatInputCommandInteraction, EmbedBuilder, GuildMember, Interaction, Message, VoiceChannel } from "discord.js"
 import { Machi, Machina, MachiUtil } from "../lib/machina"
 import { DateTime, Duration } from "luxon"
 import { HEX } from "../lib/util"
 import { UserModel } from "../lib/mongo"
+import { ChannelType, PermissionFlagsBits } from "discord-api-types/v10"
 
 interface Queue {
   count: number
@@ -134,7 +135,7 @@ export const recruiter: Machi = {
 
       let category = authorInteraction.guild.channels.cache.find(c => c.type === ChannelType.GuildCategory && c.name === CATEGORY_NAME)
       if(!category)
-        category = await authorInteraction.guild.channels.create({name: CATEGORY_NAME, type: ChannelType.GuildCategory })
+        category = await authorInteraction.guild.channels.create({name: CATEGORY_NAME, type: ChannelType.GuildCategory})
       
       let waitingRoom = authorInteraction.guild.channels.cache.find(c => c.type === ChannelType.GuildVoice && c.name === "Waiting Room")
       if(!waitingRoom)

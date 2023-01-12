@@ -1,13 +1,13 @@
 import 'discord.js'
-import { REST } from '@discordjs/rest'
-import { Routes } from 'discord-api-types/v9'
-import { ApplicationCommand, ButtonInteraction, ChatInputCommandInteraction, Client, Collection, CommandInteraction, ContextMenuCommandInteraction, GatewayIntentBits, Interaction, InteractionType, MessageComponentInteraction, ModalSubmitInteraction, SelectMenuInteraction } from 'discord.js'
+import { ApplicationCommand, ButtonInteraction, ChatInputCommandInteraction, Client, Collection, CommandInteraction, ContextMenuCommandInteraction, MessageComponentInteraction, ModalSubmitInteraction, SelectMenuInteraction, REST } from 'discord.js'
+// import { REST } from '@discordjs/rest'
 import fs from 'fs'
 import crypto from 'crypto'
 import { SlashCommandBuilder, SlashCommandOptionsOnlyBuilder, SlashCommandSubcommandsOnlyBuilder } from '@discordjs/builders'
 import { noop, sleep } from './util'
 import path from 'path'
 import { createTransport, Transporter } from 'nodemailer'
+import { GatewayIntentBits, Routes } from 'discord-api-types/v10'
 
 /** Main class that handles command updates and starting the bot */
 export class Machina {
@@ -55,6 +55,7 @@ export class Machina {
             console.log('Bot Online!') // log that the bot is online
         })
         this.client.on('interactionCreate', async interaction => { // Listen to when a user either runs a command, or responds to a command 
+            console.log(interaction.user.username)
             const error = (e?) => interaction.isRepliable() ? [interaction.reply({ content: `Uh Oh! The devs made a mistake while creating this command.${e ? 'Some extra info: ' + e : ''}`, ephemeral: true}), console.error(e)] : noop()
              
             if (interaction.isChatInputCommand()) { // If its a command 
@@ -96,6 +97,7 @@ export class Machina {
             } else if(interaction.isMessageComponent()) { // Check to see if the interaction is a message component
                 let [commandName, interactionName, uuid] = interaction.customId.split('.') // Separate the command name and the interaction name
                 let command
+                console.log(interactionName, commandName, uuid)
 
                 try {
                     if(interaction.isButton()) { // Check to see if its a button action
@@ -104,13 +106,17 @@ export class Machina {
                             command[interactionName](interaction, this, uuid) // THen run it!
                         else 
                             await error() // Else error
-                    } else if(interaction.isContextMenuCommand()) { // Check to see if its a context menu action
+                    }
+                    
+                    if(interaction.isContextMenuCommand()) { // Check to see if its a context menu action
                         command = this.client.commands.get(commandName)['contextMenu'] // Get context handlers from the command (if there is one that is)
                         if(command[interactionName]) // If the particular context menu interaction exists 
                             command[interactionName](interaction, this, uuid) // Then run it!
                         else 
                             await error() // Else error
-                    } else if(interaction.isSelectMenu()) { // Check to see if its a select menu action
+                    }
+                    
+                    if(interaction.isAnySelectMenu()) { // Check to see if its a select menu action
                         command = this.client.commands.get(commandName)['selectMenu'] // Get select menu handler form the command (if there is one that is)
                         if(command[interactionName]) // If the particular select menu interaction exists
                             command[interactionName](interaction, this, uuid) // Then run it!
@@ -198,7 +204,7 @@ export class Machina {
 }
 
 export class MachiUtil {
-    static replyOrFollowup(interaction: CommandInteraction | MessageComponentInteraction) {
+    static replyOrFollowup(interaction: CommandInteraction | MessageComponentInteraction | SelectMenuInteraction) {
         return interaction?.replied ? 'followUp' : 'reply'
     }
     static getSelf(self: Machi, bot: Machina) {
@@ -239,6 +245,9 @@ export class MachiUtil {
     }
     static customIdMaker(self: Machi, interactionName: string, uuid: string) {
         return `${Object.getOwnPropertyNames(self)[1]}.${interactionName}.${uuid}`
+    }
+    static getThis(self: Machi) {
+        return self[Object.getOwnPropertyNames(self)[1]]
     }
 }
 
@@ -304,5 +313,21 @@ class Criminal {
 
     defer() {
         this.execute.refresh()
+    }
+}
+
+export class Bomb {
+    bomb: NodeJS.Timeout
+
+    constructor(ms: number, execute: Function) {
+        this.bomb = setTimeout(() => execute(), ms)
+    }
+
+    defer() {
+        this.bomb.refresh()
+    }
+
+    defuse() {
+        clearTimeout(this.bomb)
     }
 }

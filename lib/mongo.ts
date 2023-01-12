@@ -47,10 +47,24 @@ export const BirthdayModel = model<IBirthday>('Birthday', BirthdaySchema)
 //#endregion 
 
 //#region 
-export interface ITodo extends IBase {
-  title: string, 
-  description?: string,
-  dueDate?: number
+export interface IReminder extends IBase {
+  title: string, // Title of the reminder
+  content: string,
+  channel: string,
+  mentions: string[],
+  dateTime: string,
+  authorID: string
 }
 
+export const ReminderSchema = new Schema({
+  ...BaseSchema,
+  title: String,
+  content: String,
+  channel: String,
+  mentions: [String],
+  dateTime: String,
+  authorID: String
+})
+
+export const ReminderModel = model<IReminder>('Reminder', ReminderSchema)
 //#endregion
