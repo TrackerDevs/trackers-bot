@@ -55,7 +55,7 @@ export class Machina {
             console.log('Bot Online!') // log that the bot is online
         })
         this.client.on('interactionCreate', async interaction => { // Listen to when a user either runs a command, or responds to a command 
-            console.log(interaction.user.username)
+            // console.log(interaction.user.username)
             const error = (e?) => interaction.isRepliable() ? [interaction.reply({ content: `Uh Oh! The devs made a mistake while creating this command.${e ? 'Some extra info: ' + e : ''}`, ephemeral: true}), console.error(e)] : noop()
              
             if (interaction.isChatInputCommand()) { // If its a command 
@@ -291,6 +291,11 @@ export interface Machi {
     },
     /** Whether the command should be uploaded or not. -1: should be removed if exists, 0: upserted, 1: uploaded everytime */
     upload: -1 | 0 | 1,
+    
+    // TODO add support for these
+    whiteListedServers?: string[],
+    blackListedServers?: string[],
+    
     /** This is if you want to store data on a command during runtime. Useful for keeping data between execute() and an interaction */
     storage?: {
         [key: string]: any

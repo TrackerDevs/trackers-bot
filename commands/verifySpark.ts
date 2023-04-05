@@ -1,0 +1,282 @@
+import { SlashCommandBuilder} from "@discordjs/builders"
+import { Machi, MachiUtil } from "../lib/machina"
+import crypto from "crypto"
+import { UserModel } from "../lib/mongo"
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, GuildMemberRoleManager, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js"
+import { HEX, sleep } from "../lib/util"
+import fs from "fs/promises"
+
+const { authorize, fetchEmails, fetchVerified, addVerified} = require("../lib/gsheets.js")
+
+const roleId = "1085727487482408960"
+
+const waitTime = 1000 * 60 * 5 // How much time to wait before a code expires 
+
+/**
+ * Checks the roles of the user to see if the user already is verified, and notifies them as such. 
+ * @param interaction The interaction object
+ * @returns bool Whether or not the user is verified
+ */
+const alreadyVerified = async (interaction: ChatInputCommandInteraction) => {
+  // ID of the verified role
+  if((interaction.member.roles as GuildMemberRoleManager).cache.has(roleId)) {
+    interaction.reply({
+      embeds: [{
+        author: {
+          name: interaction.user.username,
+          icon_url: interaction.user.avatarURL()
+        },
+        title: "Already Verified!",
+        description: "You have verified yourself previously, no need to do it again!",
+        color: (await interaction.user.fetch(true)).accentColor
+      }], 
+      ephemeral: true
+    })
+    
+    return true 
+  }
+
+  return false
+}
+
+/**
+ * Checks the database to see if the NetID is already associated with another user. 
+ * @param netid The netid of the user
+ * @returns bool Whether or not there is another user with the same NetID
+ */
+const otherPerson = async (interaction: ChatInputCommandInteraction) => {
+  let netid = interaction.options.getString("netid")
+  const email = netid + "@uic.edu"
+
+  await authorize().then(fetchVerified)
+
+  const emails = await fs.readFile("json/verified.json", "utf-8").then(JSON.parse)
+  
+  if(emails.includes(email)) {
+    await interaction.reply({
+      embeds: [{
+        author: {
+          name: interaction.user.username,
+          icon_url: interaction.user.avatarURL()
+        },
+        title: `${netid} is in use!`,
+        description: "You can't use someone else's NetID for verification! 🤔",
+        color: HEX.RED
+      }], 
+      ephemeral: true
+    })
+
+    return true
+  }
+
+  return false
+}
+
+/**
+ * Checks the json to see if the NetID is already associated with another user. 
+ * @param netid The netid of the user
+ * @returns bool Whether or not there is another user with the same NetID
+ */
+const isRegistered = async (interaction: ChatInputCommandInteraction) => {
+  let netid = interaction.options.getString("netid")
+  const email = netid + "@uic.edu"
+  const emails = await fs.readFile("json/emails.json", "utf-8").then(JSON.parse)
+  
+  if(!emails.includes(email)) {
+    await interaction.reply({
+      embeds: [{
+        author: {
+          name: interaction.user.username,
+          icon_url: interaction.user.avatarURL()
+        },
+        title: `NetId not found!`,
+        description: "Looks like you haven't registered, please [register here](http://bit.ly/sparkhacks-registration-2023)! If you have registered, please retry this command in a few minutes!",
+        color: HEX.RED
+      }], 
+      ephemeral: true
+    })
+
+    // Fetch emails again
+    authorize().then(fetchEmails)
+
+    return false
+  }
+
+  return true
+}
+
+export const verifyspark: Machi = {
+    data: (new SlashCommandBuilder())
+    .setDescription("Verify your discord account with your UIC NetID!")
+    .addStringOption(sOp => sOp.setName("netid").setDescription("Your UIC NetID").setRequired(true)),
+
+    execute: async (interaction, bot) => {
+      // Check to see if the user is already verified
+      // Check to see if there is another user with the same netid
+      if(await alreadyVerified(interaction) || await otherPerson(interaction)) 
+        return
+
+      const netid = interaction.options.getString("netid") // Get the netid from the options
+      const rand = crypto.randomBytes(3).toString('hex') // Generate a random code    
+
+      MachiUtil.addStorageItem(this, bot, "codes", interaction.user.id, rand, waitTime) // Add the code to the storage for later use
+
+      // Send a message to the user saying to check their email 
+      await interaction.reply({
+        embeds: [{
+          author: {
+            name: interaction.user.username,
+            icon_url: interaction.user.avatarURL()
+          },
+          title: `Sending code to ${netid}@uic.edu...`,
+          description: `Your code is being sent to ${netid}@uic.edu! Please wait patiently while we send it!`,
+          color: (await interaction.user.fetch(true)).accentColor
+        }], 
+        ephemeral: true
+      })
+      
+      // Attempt to send the email
+      try {
+        await bot.mailer.sendMail({
+            from: '"Project Bot" <projectbotuic@gmail.com>',
+            to: netid + '@uic.edu',
+            subject: 'Discord & NetID verification!',
+            text: '🤖 here is your code: ' + rand 
+        })
+      } catch(e) {
+        interaction.editReply({content: `Error: there was an issue sending the code to ${netid}@uic.edu! Please notify Hamziniii#4014`})
+        return
+      }
+
+      // Create the button to open modal
+      const row = new ActionRowBuilder<ButtonBuilder>()
+        .addComponents(
+          new ButtonBuilder()
+            .setCustomId(MachiUtil.customIdMaker(this, "openModal", interaction.user.id))
+            .setLabel('Verify')
+            .setStyle(ButtonStyle.Success),
+        );
+
+      // Edit reply to show button and ask user to click button
+      await interaction.editReply({
+        embeds: [{
+          author: {
+            name: interaction.user.username,
+            icon_url: interaction.user.avatarURL()
+          },
+          title: `Code sent to ${netid}@uic.edu!`,
+          description: `Your code is sent to ${netid}@uic.edu!\nYou have ${waitTime / 60 / 1000} minutes to click the button below and paste the code!\n Make sure to remove any spaces!`,
+          color: (await interaction.user.fetch(true)).accentColor
+        }], 
+        components: [row]
+      })
+
+      // Save the interaction for later use 
+      MachiUtil.addStorageItem(this, bot, "interactions", interaction.user.id, {interaction, netid}, waitTime)
+
+      // Wait for waitTime amount of time to pass
+      await sleep(waitTime)
+
+      // Say that the code has expried and remove the button
+      await interaction.editReply({
+        embeds: [{
+          author: {
+            name: interaction.user.username,
+            icon_url: interaction.user.avatarURL()
+          },
+          title: `Code Expired!`,
+          description: `The time has elapsed!`,
+          color: (await interaction.user.fetch(true)).accentColor
+        }],
+        components: [] 
+      })
+    },
+    button: {
+      // This is what happens when the user clicks the button 
+      "openModal": async (interaction, bot, uuid) => {
+        // Create a new modal 
+        const modal = new ModalBuilder()
+            .setCustomId(MachiUtil.customIdMaker(this, "submit", uuid))
+            .setTitle('Verification!');
+
+        // Add to the modal a field for the netid
+        modal.addComponents(new ActionRowBuilder<TextInputBuilder>().addComponents(
+          new TextInputBuilder()
+            .setCustomId('code')
+            .setLabel("Enter Verification Code Here:")
+            .setStyle(TextInputStyle.Short)
+        ))
+
+        // Show the modal 
+        await interaction.showModal(modal)
+      }
+    },
+    modalSubmit: {
+      // What happens when the user submits the modal 
+      "submit": async (interaction, bot, uuid) => {
+        // Extract info from the interaction 
+        const code = interaction.fields.getTextInputValue("code") // Get the code from the modal
+        const realCode = MachiUtil.getStorageInstance(this, bot, "codes").get(uuid) // Get the real code from the storage
+        const netid = MachiUtil.getStorageInstance(this, bot, "interactions").get(uuid).netid as string // Get the netid from the storage
+
+        if(realCode == code.trim()) { // If the code is correct
+          // Add/Update the user in the database
+          authorize().then(addVerified(netid + "@uic.edu"))
+          const role = await interaction.guild.roles.cache.get("1085727487482408960")
+          const member = await interaction.guild.members.fetch(interaction.user.id)
+          if (!member.roles.cache.has(role.id)) {
+            await member.roles.add(role)
+          }
+
+          // Respond with success message 
+          interaction.reply({
+            embeds: [{
+              author: {
+                name: interaction.user.username,
+                icon_url: interaction.user.avatarURL()
+              },
+              title: "Account Verified!",
+              description: "Your account is now verified! You can now view channels limited for registered studnets only!",
+              color: HEX.GREEN
+            }], 
+            ephemeral: true
+          })
+            .then(
+              // Remove button to open modal 
+              () => (MachiUtil.getStorageInstance(this, bot, "interactions").get(uuid).interaction as ChatInputCommandInteraction<CacheType>).editReply({components: []})
+            )
+          
+          // Delete the UUID from storage 
+          MachiUtil.getStorageInstance(this, bot, "codes").delete(uuid)
+        } else {
+          if(realCode == undefined) // If the code has expired
+            interaction.reply({
+              embeds: [{
+                author: {
+                  name: interaction.user.username,
+                  icon_url: interaction.user.avatarURL()
+                },
+                title: "Code Expired!",
+                description: "You waited too long! Please retry",
+                color: HEX.RED
+              }], 
+              ephemeral: true
+            })
+          else // If the inputted code was wrong 
+            interaction.reply({
+              embeds: [{
+                author: {
+                  name: interaction.user.username,
+                  icon_url: interaction.user.avatarURL()
+                },
+                title: "Code Invalid!",
+                description: "You did not enter the correct code! Check if you copied it correctly, and hit the verify button again!",
+                color: HEX.RED
+              }], 
+              ephemeral: true
+            })
+        }
+      }
+    },
+    upload: 0
+}

@@ -23,67 +23,77 @@ export const <some name>: Machi = {
 export const test: Machi = {
   data: (new SlashCommandBuilder()).setDescription("testing stuff and such"),
   execute: async (interaction, bot, uuid) => {
-    const TestButton = new MachiButton(this, "CS XXX", uuid, ButtonStyle.Primary, async (interaction, bot, uuid) => {
-      await interaction.reply("testing! - 1 + 2 + 3")
-      interaction[MachiUtil.replyOrFollowup(interaction)]("Testing")
-    })
+    // const TestButton = new MachiButton(this, "CS XXX", uuid, ButtonStyle.Primary, async (interaction, bot, uuid) => {
+    //   await interaction.reply("testing! - 1 + 2 + 3")
+    //   interaction[MachiUtil.replyOrFollowup(interaction)]("Testing")
+    // })
 
-    let e = (await interaction.guild.emojis.fetch()).filter(_ => _.name === "bongchad").first()
-    let s = {
-      name: "bongchad",
-      id: e?.id,
-      animated: true
+    // let e = (await interaction.guild.emojis.fetch()).filter(_ => _.name === "bongchad").first()
+    // let s = {
+    //   name: "bongchad",
+    //   id: e?.id,
+    //   animated: true
+    // }
+
+    // const row = new ActionRowBuilder<ButtonBuilder>()
+    //   .addComponents(
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //   );
+
+    // const row2 = new ActionRowBuilder<ButtonBuilder>()
+    //   .addComponents(
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //   );
+    // const row3 = new ActionRowBuilder<ButtonBuilder>()
+    //   .addComponents(
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //   );
+    // const row4 = new ActionRowBuilder<ButtonBuilder>()
+    //   .addComponents(
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //   );
+    // const row5 = new ActionRowBuilder<ButtonBuilder>()
+    //   .addComponents(
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //     TestButton.create().setEmoji(s),
+    //   );
+
+    // console.log(JSON.stringify(row.toJSON()))
+    // console.log(JSON.stringify(row2.toJSON()))
+    // console.log(JSON.stringify(row3.toJSON()))
+    // console.log(JSON.stringify(row4.toJSON()))
+    // console.log(JSON.stringify(row5.toJSON()))
+
+    // await interaction.reply({ content: 'Poooong!', components: [row, row2, row3, row4, row5] });
+    // await interaction.reply({ content: 'Poooong!'});
+    const role = await interaction.guild.roles.cache.get("1085727487482408960")
+    const member = await interaction.guild.members.fetch(interaction.user.id)
+    if (member.roles.cache.has(role.id)) {
+      await member.roles.remove(role)
+      await interaction.reply("Removed Verified role!")
+    } else {
+      await member.roles.add(role)
+      await interaction.reply("Added Verified role!")
     }
-
-    const row = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-      );
-
-    const row2 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-      );
-    const row3 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-      );
-    const row4 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-      );
-    const row5 = new ActionRowBuilder<ButtonBuilder>()
-      .addComponents(
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-        TestButton.create().setEmoji(s),
-      );
-
-    console.log(JSON.stringify(row.toJSON()))
-    console.log(JSON.stringify(row2.toJSON()))
-    console.log(JSON.stringify(row3.toJSON()))
-    console.log(JSON.stringify(row4.toJSON()))
-    console.log(JSON.stringify(row5.toJSON()))
-
-    await interaction.reply({ content: 'Poooong!', components: [row, row2, row3, row4, row5] });
   },
   button: {
     "testing": async (interaction: ButtonInteraction, bot, uuid) => {
