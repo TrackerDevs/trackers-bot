@@ -10,10 +10,14 @@
         "skipLibCheck": true,
         "forceConsistentCasingInFileNames": true,
         "resolveJsonModule": true,
-        "outDir": "js"
+        "outDir": "js", 
+        "allowJs": true
     }, 
     "exclude": [
         "examples",
         "js"
-    ]
+    ], 
+    "assets": [
+        "*.json"
+    ],
 }
