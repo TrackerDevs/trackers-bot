@@ -4,7 +4,6 @@
   "description": "",
   "main": "main.ts",
   "scripts": {
-    "postinstall": "tsc",
     "ts_start": "tsnd --respawn main.ts",
     "ts_start_with_blacklist": "tsnd --ignore-watch commands --respawn main.ts",
     "ts_autocompile": "nodemon -e ts  --exec \"tsc\"",
@@ -36,7 +35,7 @@
     "typescript": "^4.9.4"
   },
   "devDependencies": {
-    "nodemon": "^2.0.20"
+    "nodemon": "^3.0.1"
   },
   "engines": {
     "node": "17.8.0"
