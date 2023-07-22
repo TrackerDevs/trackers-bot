@@ -16,8 +16,6 @@
   "dependencies": {
     "@google-cloud/local-auth": "^2.1.0",
     "@types/luxon": "^3.1.0",
-    "@types/mongodb": "^4.0.7",
-    "@types/mongoose": "^5.11.97",
     "@types/node": "^18.11.17",
     "@types/nodemailer": "^6.4.7",
     "@types/require-from-string": "^1.2.1",
@@ -36,8 +34,5 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  },
-  "engines": {
-    "node": "17.8.0"
   }
 }
