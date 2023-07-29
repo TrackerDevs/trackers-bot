@@ -10,13 +10,21 @@ export const BaseSchema = {
 export interface IUser extends IBase {
   netid?: string,
   verified?: boolean,
+  scheduleData?: {
+    schedule: any[], // TDOO - make this an actual type
+    visible: boolean
+  }
 }
 
 export const UserSchema: Schema = new Schema(
   {
     ...BaseSchema,
     netid: { type: String, required: false },
-    verified: { type: Boolean, required: false }
+    verified: { type: Boolean, required: false },
+    scheduleData: {
+      schedule: { type: Array, required: false },
+      visible: { type: Boolean, required: false }
+    }
   },
   {
     timestamps: true
