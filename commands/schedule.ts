@@ -4,13 +4,14 @@ import { Machi } from "../lib/machina"
 import { HEX } from "../lib/util"
 import axios from "axios"
 import { parseSchedule } from "../lib/icsParser"
+import { parsePDFSchedule } from "../lib/pdfParser"
 import { UserModel } from "../lib/mongo"
 
 const forcedVisible = true
 
 const displayScheduleAsFields = (schedule: ReturnType<typeof parseSchedule>) => schedule.map(_ => ({
     name: _.courseName,
-    value: `Course ID: \`${_.courseID}\`\nTime: \`${_.startTime}\` - \`${_.endTime}\`\nLocation: \`${_.location}\`\nInstructor: \`${_.instructor}\`\n`,
+    value: `Course ID: \`${_.courseID}\`\nTime: \`${_.startTime}\` - \`${_.endTime}\`\nLocation: \`${_.location}\`\nInstructor: \`${_.instructor ? _.instructor : "Not yet assigned"}\`\n`,
     inline: false
 }))
 
@@ -44,7 +45,26 @@ export const schedule: Machi = {
     },
     add: async (interaction: ChatInputCommandInteraction) => {
       const attachemnt = interaction.options.getAttachment("schedule")
-      if(!attachemnt?.name.endsWith(".ics")) {
+      let visible = interaction.options.getBoolean("visible");
+
+      if (visible !== false && visible === null) {
+        // visible is null but not false
+        visible = true;
+      }
+
+      let parsedSchedules = null;
+
+      if(attachemnt?.name.endsWith(".ics")){
+        const schedule = (await axios.get(attachemnt.url)).data;
+        parsedSchedules = parseSchedule(schedule);
+      }
+      else if (attachemnt?.name.endsWith(".pdf")){
+        const schedulePDFLink = (await axios.get(attachemnt.url)).config.url
+
+        await parsePDFSchedule(schedulePDFLink).then((data) => {
+          parsedSchedules = data;
+        });
+      } else {
         interaction.reply({
           embeds: [{
             author: {
@@ -52,18 +72,17 @@ export const schedule: Machi = {
               icon_url: interaction.user.avatarURL()
             },
             title: "Attachement Invalid!",
-            description: `You uploaded [${attachemnt?.name}]. This is not a proper .ics file! Please try again!`,
+            description: `You uploaded [${attachemnt?.name}]. This is not a proper .ics or .pdf file! Please try again!`,
             color: HEX.RED
           }], 
-          ephemeral: !forcedVisible
+          ephemeral: !visible
         })
         return
       }
 
-      const visible = interaction.options.getBoolean("visible") || true
-
-      const schedule = (await axios.get(attachemnt.url)).data
-      const parsedSchedules = parseSchedule(schedule)
+      if(!parsedSchedules){
+        return;
+      }
       
       if(parsedSchedules.length == 0) {
         interaction.reply({
@@ -76,11 +95,28 @@ export const schedule: Machi = {
             description: `Looks like there are no valid classes! Make sure you uploaded the correct .ics file!`,
             color: HEX.RED
           }], 
-          ephemeral: !forcedVisible
+          ephemeral: !visible
         })
         return
       }
+      
+      let rolesAdded = [];
+      const member = await interaction.guild.members.fetch(interaction.user.id);
 
+      parsedSchedules.forEach((classRow) => {
+        const temp = classRow.courseID.split(' ');
+        const courseId = temp.slice(0, 2).join(' ');
+        const role = interaction.guild.roles.cache.find(role => role.name === courseId);
+        if(role){
+          member.roles.add(role);
+          if(!rolesAdded.includes(courseId)){
+            rolesAdded.push(courseId);
+          }
+        }
+      })
+      
+      const replyFields = displayScheduleAsFields(parsedSchedules);
+      replyFields.push({name: "Added The Following Roles: ", value: rolesAdded.join(", "), inline: false })
       interaction.reply({
         embeds: [{
           author: {
@@ -90,9 +126,9 @@ export const schedule: Machi = {
           title: "Schedule Added!",
           description: `You have successfully added your schedule! Below is your schedule!`,
           color: HEX.GREEN,
-          fields: displayScheduleAsFields(parsedSchedules)
+          fields: replyFields,
         }],
-        ephemeral: !forcedVisible
+        ephemeral: !visible
       })
 
       await UserModel.updateOne(

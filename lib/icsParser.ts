@@ -20,7 +20,7 @@ export const parseClass = (event: ical.VEvent) => {
 
   const summaryPartial = event.summary.slice(0, -2).split(" ")
   const courseName = summaryPartial.slice(0, -2).join(" ")
-  const courseID = summaryPartial.slice(-2).join(" ")
+  const courseID = summaryPartial.slice(-3, -1).join(" ")
   const [crn, creditHours, level, instructor] = event.description.split("\n").map(_ => _.split(": ")[1]?.trim())
   const [startTime, endTime] = [event.start, event.end].map(_ => DateTime.fromJSDate(_ as Date, {zone: "America/Chicago"}).toFormat("hh:mm a ZZZZ"))
 
