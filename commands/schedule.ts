@@ -7,8 +7,6 @@ import { parseSchedule } from "../lib/icsParser"
 import { parsePDFSchedule } from "../lib/pdfParser"
 import { UserModel } from "../lib/mongo"
 
-const forcedVisible = true
-
 const displayScheduleAsFields = (schedule: ReturnType<typeof parseSchedule>) => schedule.map(_ => ({
     name: _.courseName,
     value: `Course ID: \`${_.courseID}\`\nTime: \`${_.startTime}\` - \`${_.endTime}\`\nLocation: \`${_.location}\`\nInstructor: \`${_.instructor ? _.instructor : "Not yet assigned"}\`\n`,
@@ -22,7 +20,7 @@ export const schedule: Machi = {
       command => command
         .setName("add")
         .setDescription("Add your schedule!")
-        .addAttachmentOption(option => option.setName("schedule").setDescription("Your schedule .ICS file!").setRequired(true))
+        .addAttachmentOption(option => option.setName("schedule").setDescription("Your schedule .PDF or .ICS file!").setRequired(true))
         .addBooleanOption(option => option.setName("visible").setDescription("Should your schedule be visible to other students?").setRequired(false))
     ).addSubcommand(
       command => command
@@ -62,7 +60,23 @@ export const schedule: Machi = {
         const schedulePDFLink = (await axios.get(attachemnt.url)).config.url
 
         await parsePDFSchedule(schedulePDFLink).then((data) => {
-          parsedSchedules = data;
+          if (data) {
+            parsedSchedules = data;
+          } else {
+            interaction.reply({
+              embeds: [{
+                author: {
+                  name: interaction.user.username,
+                  icon_url: interaction.user.avatarURL()
+                },
+                title: "Invalid PDF!",
+                description: `Attachment [${attachemnt?.name}] is invalid. Please try with a different schedule, or use a manual reactions roles!`,
+                color: HEX.RED
+              }], 
+              ephemeral: !visible
+            })
+            return;
+          }          
         });
       } else {
         interaction.reply({
@@ -72,7 +86,7 @@ export const schedule: Machi = {
               icon_url: interaction.user.avatarURL()
             },
             title: "Attachement Invalid!",
-            description: `You uploaded [${attachemnt?.name}]. This is not a proper .ics or .pdf file! Please try again!`,
+            description: `You uploaded [${attachemnt?.name}]. This is not a proper .pdf or .ics file! Please try again!`,
             color: HEX.RED
           }], 
           ephemeral: !visible
@@ -92,7 +106,7 @@ export const schedule: Machi = {
               icon_url: interaction.user.avatarURL()
             },
             title: "Empty Schedule!",
-            description: `Looks like there are no valid classes! Make sure you uploaded the correct .ics file!`,
+            description: `Looks like there are no valid classes! Make sure you uploaded the correct .pdf or .ics file!`,
             color: HEX.RED
           }], 
           ephemeral: !visible
