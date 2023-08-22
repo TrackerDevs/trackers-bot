@@ -2,10 +2,16 @@ import { SlashCommandBuilder} from "@discordjs/builders"
 import { Machi, MachiUtil } from "../lib/machina"
 import crypto from "crypto"
 import { UserModel } from "../lib/mongo"
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js"
+import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CacheType, ChatInputCommandInteraction, GuildMemberRoleManager, Interaction, ModalBuilder, TextInputBuilder, TextInputStyle } from "discord.js"
 import { HEX, sleep } from "../lib/util"
 
 const waitTime = 1000 * 60 * 5 // How much time to wait before a code expires 
+
+const assignRole = async (interaction: Interaction) => {
+  const role = interaction.guild.roles.cache.find(role => role.name === "Tracker")
+  if(role)
+    await (interaction.member.roles as GuildMemberRoleManager).add(role)
+}
 
 /**
  * Checks the database to see if the user already is verified, and notifies them as such. 
@@ -28,6 +34,8 @@ const alreadyVerified = async (interaction: ChatInputCommandInteraction) => {
       }], 
       ephemeral: false
     })
+
+    assignRole(interaction)
     return true 
   }
 
@@ -275,6 +283,7 @@ export const verify: Machi = {
               })
 
               MachiUtil.getStorageInstance(this, bot, "codes").delete(netid)
+              assignRole(interaction)
           } else
             if(realCode == undefined) 
               interaction.reply({
@@ -363,6 +372,7 @@ export const verify: Machi = {
           
           // Delete the UUID from storage 
           MachiUtil.getStorageInstance(this, bot, "codes").delete(uuid)
+          assignRole(interaction)
         } else {
           if(realCode == undefined) // If the code has expired
             interaction.reply({
