@@ -234,7 +234,7 @@ export const admin: Machi = {
             parent: category
           })
 
-          reply.edit(`Added course ${courseNum}`)
+          i.editReply(`Added course ${courseNum}`)
         }
 
         const row = new MachiButtonRow(this, uuid, interaction)

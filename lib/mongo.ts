@@ -12,7 +12,7 @@ export interface IUser extends IBase {
   verified?: boolean,
   scheduleData?: {
     schedule: any[], // TDOO - make this an actual type
-    visible: boolean
+    open: boolean
   }
 }
 
@@ -23,7 +23,7 @@ export const UserSchema: Schema = new Schema(
     verified: { type: Boolean, required: false },
     scheduleData: {
       schedule: { type: Array, required: false },
-      visible: { type: Boolean, required: false }
+      open: { type: Boolean, required: false }
     }
   },
   {

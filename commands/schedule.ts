@@ -3,7 +3,7 @@ import { ChatInputCommandInteraction } from "discord.js"
 import { Machi } from "../lib/machina"
 import { HEX } from "../lib/util"
 import axios from "axios"
-import { parseSchedule } from "../lib/icsParser"
+import { ParsedSchedules, parseSchedule } from "../lib/icsParser"
 import { parsePDFSchedule } from "../lib/pdfParser"
 import { UserModel } from "../lib/mongo"
 
@@ -23,7 +23,7 @@ export const schedule: Machi = {
         .setName("add")
         .setDescription("Add your schedule!")
         .addAttachmentOption(option => option.setName("schedule").setDescription("Your schedule .ICS file!").setRequired(true))
-        .addBooleanOption(option => option.setName("visible").setDescription("Should your schedule be visible to other students?").setRequired(false))
+        .addBooleanOption(option => option.setName("open").setDescription("Should your schedule be open to view by other students?").setRequired(false))
     ).addSubcommand(
       command => command
         .setName("help")
@@ -45,14 +45,9 @@ export const schedule: Machi = {
     },
     add: async (interaction: ChatInputCommandInteraction) => {
       const attachemnt = interaction.options.getAttachment("schedule")
-      let visible = interaction.options.getBoolean("visible");
+      let open = interaction.options.getBoolean("open") ?? true;
 
-      if (visible !== false && visible === null) {
-        // visible is null but not false
-        visible = true;
-      }
-
-      let parsedSchedules = null;
+      let parsedSchedules: ParsedSchedules = null;
 
       if(attachemnt?.name.endsWith(".ics")){
         const schedule = (await axios.get(attachemnt.url)).data;
@@ -60,10 +55,7 @@ export const schedule: Machi = {
       }
       else if (attachemnt?.name.endsWith(".pdf")){
         const schedulePDFLink = (await axios.get(attachemnt.url)).config.url
-
-        await parsePDFSchedule(schedulePDFLink).then((data) => {
-          parsedSchedules = data;
-        });
+        parsedSchedules  = await parsePDFSchedule(schedulePDFLink)
       } else {
         interaction.reply({
           embeds: [{
@@ -75,16 +67,15 @@ export const schedule: Machi = {
             description: `You uploaded [${attachemnt?.name}]. This is not a proper .ics or .pdf file! Please try again!`,
             color: HEX.RED
           }], 
-          ephemeral: !visible
+          ephemeral: !forcedVisible
         })
         return
       }
 
-      if(!parsedSchedules){
-        return;
-      }
+      if(!parsedSchedules)
+        return
       
-      if(parsedSchedules.length == 0) {
+      if(parsedSchedules.length === 0) {
         interaction.reply({
           embeds: [{
             author: {
@@ -92,10 +83,10 @@ export const schedule: Machi = {
               icon_url: interaction.user.avatarURL()
             },
             title: "Empty Schedule!",
-            description: `Looks like there are no valid classes! Make sure you uploaded the correct .ics file!`,
+            description: `Looks like there are no valid classes! Make sure you uploaded the correct file!`,
             color: HEX.RED
           }], 
-          ephemeral: !visible
+          ephemeral: !forcedVisible
         })
         return
       }
@@ -104,19 +95,20 @@ export const schedule: Machi = {
       const member = await interaction.guild.members.fetch(interaction.user.id);
 
       parsedSchedules.forEach((classRow) => {
+        console.log(classRow.courseID)
         const temp = classRow.courseID.split(' ');
         const courseId = temp.slice(0, 2).join(' ');
         const role = interaction.guild.roles.cache.find(role => role.name === courseId);
         if(role){
           member.roles.add(role);
           if(!rolesAdded.includes(courseId)){
-            rolesAdded.push(courseId);
+            rolesAdded.push(role.id);
           }
         }
       })
       
       const replyFields = displayScheduleAsFields(parsedSchedules);
-      replyFields.push({name: "Added The Following Roles: ", value: rolesAdded.join(", "), inline: false })
+      replyFields.push({name: "Added The Following Roles: ", value: rolesAdded.map(roleId => `<@&${roleId}>`).join(", "), inline: false })
       interaction.reply({
         embeds: [{
           author: {
@@ -128,7 +120,7 @@ export const schedule: Machi = {
           color: HEX.GREEN,
           fields: replyFields,
         }],
-        ephemeral: !visible
+        ephemeral: !forcedVisible
       })
 
       await UserModel.updateOne(
@@ -137,7 +129,7 @@ export const schedule: Machi = {
           $set: {
             scheduleData: {
               schedule: parsedSchedules,
-              visible
+              open
             }
           }
         },
@@ -152,7 +144,7 @@ export const schedule: Machi = {
       const isSelf = user.id === interaction.user.id
       const avaialable = !!userData && "scheduleData" in userData
 
-      if(!isSelf && (!avaialable || !userData.scheduleData.visible)) {
+      if(!isSelf && (!avaialable || !userData.scheduleData.open)) {
         interaction.reply({
           embeds: [{
             author: {
