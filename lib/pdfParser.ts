@@ -112,7 +112,7 @@ const parseClass = (classRow) => {
 
   return {
     courseName,
-    courseID,
+    courseID: (courseID as string).substring(0, courseID.length - 2),
     crn,
     creditHours,
     level,

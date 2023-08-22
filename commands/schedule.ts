@@ -7,6 +7,9 @@ import { ParsedSchedules, parseSchedule } from "../lib/icsParser"
 import { parsePDFSchedule } from "../lib/pdfParser"
 import { UserModel } from "../lib/mongo"
 
+// This forces the ephemeral option, for testing only
+const forcedVisible = true;
+
 const displayScheduleAsFields = (schedule: ReturnType<typeof parseSchedule>) => schedule.map(_ => ({
     name: _.courseName,
     value: `Course ID: \`${_.courseID}\`\nTime: \`${_.startTime}\` - \`${_.endTime}\`\nLocation: \`${_.location}\`\nInstructor: \`${_.instructor ? _.instructor : "Not yet assigned"}\`\n`,
@@ -53,26 +56,23 @@ export const schedule: Machi = {
       }
       else if (attachemnt?.name.endsWith(".pdf")){
         const schedulePDFLink = (await axios.get(attachemnt.url)).config.url
-
-        await parsePDFSchedule(schedulePDFLink).then((data) => {
-          if (data) {
-            parsedSchedules = data;
-          } else {
-            interaction.reply({
-              embeds: [{
-                author: {
-                  name: interaction.user.username,
-                  icon_url: interaction.user.avatarURL()
-                },
-                title: "Invalid PDF!",
-                description: `Attachment [${attachemnt?.name}] is invalid. Please try with a different schedule, or use a manual reactions roles!`,
-                color: HEX.RED
-              }], 
-              ephemeral: !visible
-            })
-            return;
-          }          
-        });
+        parsedSchedules = await parsePDFSchedule(schedulePDFLink)
+        
+        if (!parsedSchedules) {
+          interaction.reply({
+            embeds: [{
+              author: {
+                name: interaction.user.username,
+                icon_url: interaction.user.avatarURL()
+              },
+              title: "Invalid PDF!",
+              description: `Attachment [${attachemnt?.name}] is invalid. Please try with a different schedule, or use a manual reactions roles!`,
+              color: HEX.RED
+            }], 
+            ephemeral: !forcedVisible
+          })
+          return;
+        }
       } else {
         interaction.reply({
           embeds: [{
