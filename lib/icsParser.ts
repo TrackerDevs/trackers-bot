@@ -40,6 +40,8 @@ export const parseClass = (event: ical.VEvent) => {
   }
 }
 
+export type ParsedSchedules = ReturnType<typeof parseSchedule>
+
 export const parseSchedule = (schedule: string) => {
   const events = ical.sync.parseICS(schedule)
   return Object.values(events).map(parseClass).filter(_ => _)

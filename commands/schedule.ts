@@ -3,14 +3,16 @@ import { ChatInputCommandInteraction } from "discord.js"
 import { Machi } from "../lib/machina"
 import { HEX } from "../lib/util"
 import axios from "axios"
-import { parseSchedule } from "../lib/icsParser"
+import { ParsedSchedules, parseSchedule } from "../lib/icsParser"
+import { parsePDFSchedule } from "../lib/pdfParser"
 import { UserModel } from "../lib/mongo"
 
-const forcedVisible = true
+// This forces the ephemeral option, for testing only
+const forcedVisible = false;
 
 const displayScheduleAsFields = (schedule: ReturnType<typeof parseSchedule>) => schedule.map(_ => ({
     name: _.courseName,
-    value: `Course ID: \`${_.courseID}\`\nTime: \`${_.startTime}\` - \`${_.endTime}\`\nLocation: \`${_.location}\`\nInstructor: \`${_.instructor}\`\n`,
+    value: `Course ID: \`${_.courseID}\`\nTime: \`${_.startTime}\` - \`${_.endTime}\`\nLocation: \`${_.location}\`\nInstructor: \`${_.instructor ? _.instructor : "Not yet assigned"}\`\n`,
     inline: false
 }))
 
@@ -22,7 +24,7 @@ export const schedule: Machi = {
         .setName("add")
         .setDescription("Add your schedule!")
         .addAttachmentOption(option => option.setName("schedule").setDescription("Your schedule .ICS file!").setRequired(true))
-        .addBooleanOption(option => option.setName("visible").setDescription("Should your schedule be visible to other students?").setRequired(false))
+        .addBooleanOption(option => option.setName("open").setDescription("Should your schedule be open to view by other students?").setRequired(false))
     ).addSubcommand(
       command => command
         .setName("help")
@@ -44,7 +46,34 @@ export const schedule: Machi = {
     },
     add: async (interaction: ChatInputCommandInteraction) => {
       const attachemnt = interaction.options.getAttachment("schedule")
-      if(!attachemnt?.name.endsWith(".ics")) {
+      let open = interaction.options.getBoolean("open") ?? true;
+
+      let parsedSchedules: ParsedSchedules = null;
+
+      if(attachemnt?.name.endsWith(".ics")){
+        const schedule = (await axios.get(attachemnt.url)).data;
+        parsedSchedules = parseSchedule(schedule);
+      }
+      else if (attachemnt?.name.endsWith(".pdf")){
+        const schedulePDFLink = (await axios.get(attachemnt.url)).config.url
+        parsedSchedules = await parsePDFSchedule(schedulePDFLink)
+        
+        if (!parsedSchedules) {
+          interaction.reply({
+            embeds: [{
+              author: {
+                name: interaction.user.username,
+                icon_url: interaction.user.avatarURL()
+              },
+              title: "Invalid PDF!",
+              description: `Attachment [${attachemnt?.name}] is invalid. Please try with a different schedule, or use a manual reactions roles!`,
+              color: HEX.RED
+            }], 
+            ephemeral: !forcedVisible
+          })
+          return;
+        }
+      } else {
         interaction.reply({
           embeds: [{
             author: {
@@ -52,7 +81,7 @@ export const schedule: Machi = {
               icon_url: interaction.user.avatarURL()
             },
             title: "Attachement Invalid!",
-            description: `You uploaded [${attachemnt?.name}]. This is not a proper .ics file! Please try again!`,
+            description: `You uploaded [${attachemnt?.name}]. This is not a proper .pdf or .ics file! Please try again!`,
             color: HEX.RED
           }], 
           ephemeral: !forcedVisible
@@ -60,12 +89,10 @@ export const schedule: Machi = {
         return
       }
 
-      const visible = interaction.options.getBoolean("visible") || true
-
-      const schedule = (await axios.get(attachemnt.url)).data
-      const parsedSchedules = parseSchedule(schedule)
+      if(!parsedSchedules)
+        return
       
-      if(parsedSchedules.length == 0) {
+      if(parsedSchedules.length === 0) {
         interaction.reply({
           embeds: [{
             author: {
@@ -73,14 +100,31 @@ export const schedule: Machi = {
               icon_url: interaction.user.avatarURL()
             },
             title: "Empty Schedule!",
-            description: `Looks like there are no valid classes! Make sure you uploaded the correct .ics file!`,
+            description: `Looks like there are no valid classes! Make sure you uploaded the correct .pdf or .ics file!`,
             color: HEX.RED
           }], 
           ephemeral: !forcedVisible
         })
         return
       }
+      
+      let rolesAdded = [];
+      const member = await interaction.guild.members.fetch(interaction.user.id);
 
+      parsedSchedules.forEach((classRow) => {
+        const temp = classRow.courseID.split(' ');
+        const courseId = temp.slice(0, 2).join(' ');
+        const role = interaction.guild.roles.cache.find(role => role.name === courseId);
+        if(role){
+          member.roles.add(role);
+          if(!rolesAdded.includes(courseId)){
+            rolesAdded.push(role.id);
+          }
+        }
+      })
+      
+      const replyFields = displayScheduleAsFields(parsedSchedules);
+      replyFields.push({name: "Added The Following Roles: ", value: rolesAdded.map(roleId => `<@&${roleId}>`).join(", "), inline: false })
       interaction.reply({
         embeds: [{
           author: {
@@ -90,7 +134,7 @@ export const schedule: Machi = {
           title: "Schedule Added!",
           description: `You have successfully added your schedule! Below is your schedule!`,
           color: HEX.GREEN,
-          fields: displayScheduleAsFields(parsedSchedules)
+          fields: replyFields,
         }],
         ephemeral: !forcedVisible
       })
@@ -101,7 +145,7 @@ export const schedule: Machi = {
           $set: {
             scheduleData: {
               schedule: parsedSchedules,
-              visible
+              open
             }
           }
         },
@@ -116,7 +160,7 @@ export const schedule: Machi = {
       const isSelf = user.id === interaction.user.id
       const avaialable = !!userData && "scheduleData" in userData
 
-      if(!isSelf && (!avaialable || !userData.scheduleData.visible)) {
+      if(!isSelf && (!avaialable || !userData.scheduleData.open)) {
         interaction.reply({
           embeds: [{
             author: {
