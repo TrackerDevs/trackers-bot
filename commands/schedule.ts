@@ -8,7 +8,7 @@ import { parsePDFSchedule } from "../lib/pdfParser"
 import { UserModel } from "../lib/mongo"
 
 // This forces the ephemeral option, for testing only
-const forcedVisible = true;
+const forcedVisible = false;
 
 const displayScheduleAsFields = (schedule: ReturnType<typeof parseSchedule>) => schedule.map(_ => ({
     name: _.courseName,
