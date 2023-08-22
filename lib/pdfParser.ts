@@ -52,38 +52,63 @@ const getClasses = (rows) => {
     classInfo.push(line);
   }
 
+  classes.push(classInfo);
   return classes;
 };
+
+const getInstructors = (classRow, index) => {
+  let instructors = []
+  for (let i = index; i < classRow.length; i++) {
+    if (classRow[i] && classRow[i][0]) {
+      instructors.push(classRow[i][0]);
+    }
+  }
+
+  return instructors;
+}
 
 const parseClass = (classRow) => {
   const details = classRow[0];
   const courseName = details[0];
   const courseID = details[1];
   const creditHours = details[2];
-  const crn = details[3].slice(0, 5);
-  const date = details[3].slice(5).split(" - ");
+
+  let crn, date;
+  if(details.length === 5){
+    crn = details[3];
+    date = details[4].split(" - ");
+  } else {
+    crn = details[3].slice(0, 5);
+    date = details[3].slice(5).split(" - ");
+  }
   const startDate = date[0];
   const endDate = date[1];
 
-  const level = "Undergrad - Chicago";
-  const days = classRow[1][0];
-  const times = classRow[2][0].split("-");
-  const startTime = times[0];
-  const endTime = times[1];
-  const location = classRow[3][0];
-
+  let times, startTime, endTime, location, days;
   let instructors = [];
-  for (let i = 4; i < classRow.length; i++) {
-    if (classRow[i] && classRow[i][0]) {
-      instructors.push(classRow[i][0]);
-    }
+  if(classRow[1][0].includes("Online Section")){
+    days = "Self-Paced";
+    times = "Online";
+    startTime = "N/A";
+    endTime = "N/A";
+    location = "Remote";
+    instructors = getInstructors(classRow, 2);
+  } else {
+    days = classRow[1][0];
+    times = classRow[2][0].split("-");
+    startTime = times[0];
+    endTime = times[1];
+    location = classRow[3][0];
+    instructors = getInstructors(classRow, 4);
   }
+
   const instructor = instructors.join(" - ");
 
   const vagueTime = DateTime.fromJSDate(startDate, { zone: "America/Chicago" });
   const season = vagueTime.month > 5 ? "fall" : "spring";
   const year = startDate.split("/")[2];
   const semester = `${captialize(season)} ${year}`;
+  const level = "Undergrad - Chicago";
 
   return {
     courseName,
@@ -114,5 +139,6 @@ export const parsePDFSchedule = async (pdfURL: string) => {
       .filter((_) => _);
   } catch (err) {
     console.error("Error reading the file:", err);
+    return null;
   }
 };
