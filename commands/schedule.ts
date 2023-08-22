@@ -112,7 +112,6 @@ export const schedule: Machi = {
       const member = await interaction.guild.members.fetch(interaction.user.id);
 
       parsedSchedules.forEach((classRow) => {
-        console.log(classRow.courseID)
         const temp = classRow.courseID.split(' ');
         const courseId = temp.slice(0, 2).join(' ');
         const role = interaction.guild.roles.cache.find(role => role.name === courseId);
