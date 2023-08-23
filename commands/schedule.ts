@@ -10,7 +10,7 @@ import { UserModel } from "../lib/mongo"
 // This forces the ephemeral option, for testing only
 const forcedVisible = false;
 
-const displayScheduleAsFields = (schedule: ReturnType<typeof parseSchedule>) => schedule.map(_ => ({
+export const displayScheduleAsFields = (schedule: ReturnType<typeof parseSchedule>) => schedule.map(_ => ({
     name: _.courseName,
     value: `Course ID: \`${_.courseID}\`\nTime: \`${_.startTime}\` - \`${_.endTime}\`\nLocation: \`${_.location}\`\nInstructor: \`${_.instructor ? _.instructor : "Not yet assigned"}\`\n`,
     inline: false

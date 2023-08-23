@@ -1,7 +1,10 @@
 import { AnyComponentBuilder, SlashCommandBuilder } from "@discordjs/builders"
-import { ActionRowBuilder, ButtonBuilder, ButtonStyle, CategoryChannel, ChannelType, PermissionResolvable, SelectMenuBuilder } from "discord.js"
+import { APIEmbedField, ActionRowBuilder, ButtonBuilder, ButtonStyle, CategoryChannel, ChannelType, PermissionResolvable, SelectMenuBuilder } from "discord.js"
 import { Machi, MachiUtil } from "../lib/machina"
 import { MachiButton, MachiButtonRow } from "../lib/meta"
+import { UserModel } from "../lib/mongo"
+import { HEX } from "../lib/util"
+import { displayScheduleAsFields } from "./schedule"
 
 
 export const admin: Machi = {
@@ -46,7 +49,19 @@ export const admin: Machi = {
               .addChannelTypes(ChannelType.GuildCategory)
             )
         )
-    ).setDefaultMemberPermissions(8),
+    )
+    .addSubcommandGroup(
+      group => group
+        .setName("user")
+        .setDescription("User commands")
+        .addSubcommand(
+          command => command
+            .setName("view")
+            .setDescription("View a user's profile")
+            .addUserOption(uOp => uOp.setName("user").setDescription("The user you want to view the profile of").setRequired(true))
+        )
+    )
+    .setDefaultMemberPermissions(8),
   execute: async (interaction) => {
     interaction.reply("this is a fallback, and should theoretically never rrrrrun")
   },
@@ -262,6 +277,62 @@ export const admin: Machi = {
       quarantine: async (interaction) => {
         const courseChannel = interaction.options.getChannel("course_channel")
         interaction.reply(`Quarantining course ${courseChannel.name}`)
+      }
+    }, 
+    user: {
+      view: async (interaction, bot, uuid) => {
+        const user = interaction.options.getUser("user")
+        const userData = await UserModel.findOne({id: user.id})
+        
+        if(!userData) {
+          interaction.reply({
+            embeds: [{
+              author: {
+                name: interaction.user.username,
+                icon_url: interaction.user.avatarURL()
+              },
+              title: "User has no data!",
+              description: `Oops, looks like the user isn't present in our database!`,
+              color: HEX.RED
+            }],
+            ephemeral: true
+          })
+          return
+        }
+
+        const fields: APIEmbedField[] = []
+
+        if(userData.verified != null)
+          fields.push({
+            name: "Verified",
+            value: userData.verified ? "Yes" : "No",
+            inline: true
+          })
+
+        if(userData.netid)
+          fields.push({
+            name: "NetID",
+            value: userData.netid,
+            inline: true
+          })
+
+        if(userData.scheduleData)
+          fields.push(
+            ...displayScheduleAsFields(userData.scheduleData.schedule)  
+          )
+
+        interaction.reply({
+          embeds: [{
+            author: {
+              name: interaction.user.username,
+              icon_url: interaction.user.avatarURL()
+            },
+            title: `${user.username}'s data!`,
+            color: interaction.user.accentColor,
+            fields
+          }],
+          ephemeral: true
+        })
       }
     }
   },
