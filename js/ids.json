@@ -1,0 +1,22 @@
+{
+    "requesting": {
+        "roles": [],
+        "members": [
+            "Hamziniii",
+            "AdepT"
+        ]
+    },
+    "recieved": {
+        "roles": {},
+        "members": {
+            "Hamziniii": {
+                "name": "Hamziniii",
+                "id": "393247221505851412"
+            },
+            "AdepT": {
+                "name": "AdepT",
+                "id": "351434936655282188"
+            }
+        }
+    }
+}
