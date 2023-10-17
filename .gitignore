@@ -1,6 +1,6 @@
 node_modules
 .env
 # ids.json
-js
+# js
 # lib/credentials/*
 json
