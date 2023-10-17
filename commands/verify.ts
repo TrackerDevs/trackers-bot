@@ -8,7 +8,7 @@ import { HEX, sleep } from "../lib/util"
 const waitTime = 1000 * 60 * 5 // How much time to wait before a code expires 
 
 const assignRole = async (interaction: Interaction) => {
-  const role = interaction.guild.roles.cache.find(role => role.name === "Tracker")
+  const role = interaction.guild.roles.cache.find(role => role.name === "Tracker" || role.name === "Trackers")
   if(role)
     await (interaction.member.roles as GuildMemberRoleManager).add(role)
 }
@@ -138,7 +138,7 @@ export const verify: Machi = {
             text: '🤖 here is your code: ' + rand 
         })
       } catch(e) {
-        interaction.editReply({content: `Error: there was an issue sending the code to ${netid}@uic.edu! Please notify Hamziniii#4014`})
+        interaction.editReply({content: `Error: there was an issue sending the code to ${netid}@uic.edu! Please notify Hamziniii`})
         return
       }
 
