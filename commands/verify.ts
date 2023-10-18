@@ -32,7 +32,7 @@ const alreadyVerified = async (interaction: ChatInputCommandInteraction) => {
         description: "You have verified yourself previously, no need to do it again!",
         color: (await interaction.user.fetch(true)).accentColor
       }], 
-      ephemeral: false
+      ephemeral: true
     })
 
     assignRole(interaction)
@@ -62,7 +62,7 @@ const otherPerson = async (interaction: ChatInputCommandInteraction) => {
         description: "You can't use someone else's NetID for verification! 🤔",
         color: HEX.RED
       }], 
-      ephemeral: false
+      ephemeral: true
     })
 
     return true
@@ -101,7 +101,7 @@ export const verify: Machi = {
     ,
     execute: async (interaction, bot) => {
       if(!bot.mailer) { // Check to see if the mailer is in service
-        interaction.reply({content: 'Error: Email service not in use, check back later!', ephemeral: false})
+        interaction.reply({content: 'Error: Email service not in use, check back later!', ephemeral: true})
         return
       }
 
@@ -188,7 +188,7 @@ export const verify: Machi = {
     subCommands: { // Below are the subcommands for the verify command, which is the verification v1 of the command
         getcode: async (interaction, bot) => {
             if(!bot.mailer) {
-              interaction.reply({content: 'Error: Email service not in use, check back later!', ephemeral: false})
+              interaction.reply({content: 'Error: Email service not in use, check back later!', ephemeral: true})
               return
             }
 
